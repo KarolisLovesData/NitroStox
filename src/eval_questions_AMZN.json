@@ -1,0 +1,246 @@
+{
+  "_instructions": [
+    "answerable: true = the answer is in the filing; false = it should NOT be (correct output is a refusal / 'Insufficient data').",
+    "evidence_snippet is an exact phrase from the filing text. Compare after collapsing all whitespace runs to a single space on BOTH the chunk text and the snippet (the filing has long runs of spaces inside tables).",
+    "Retrieval hit = normalized snippet appears in any of the top_k chunks. Answer correct = generated answer agrees with expected_answer. Refusal correct = on answerable:false, the system declines instead of answering.",
+    "'note' fields explain traps and weak questions. Answers were extracted from the saved filing text, so spot-check them against the file before treating them as final.",
+    "alt_snippets: other exact phrases in the filing that also answer the question (added after the first retrieval run showed the single-snippet metric was too narrow for questions answered in several places). Reports show a strict score (primary snippet only) and a lenient score (primary or any alternate). Alternates were chosen from the filing text, not from what the app retrieved."
+  ],
+  "filing": {
+    "ticker": "AMZN",
+    "form": "10-Q",
+    "period": "quarter ended June 30, 2026 (Q2 2026)",
+    "commission_file_no": "001-43202",
+    "accession": "TO_FILL (printed by save_filing.py)",
+    "source_file": "filing_AMZN.txt",
+    "note": "Pin this exact file. The app fetches the latest filing, so live results change when a new one is filed."
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "What was total revenue for the quarter, and how did it compare with the same quarter last year?",
+      "answerable": true,
+      "expected_answer": "Total net sales were $200,606 million in Q2 2026 versus $167,702 million in Q2 2025, an increase of 20%.",
+      "evidence_snippet": "Sales increased 20% in Q2 2026, and 18% for the six months ended June 30, 2026 compared to the comparable prior year periods.",
+      "alt_snippets": [
+        "Total net sales 167,702 200,606 323,369 382,125",
+        "Consolidated $ 167,702 $ 200,606 $ 323,369 $"
+      ]
+    },
+    {
+      "id": "q02",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "What was net income for the quarter?",
+      "answerable": true,
+      "expected_answer": "Net income was $62,647 million in Q2 2026 versus $18,164 million in Q2 2025.",
+      "evidence_snippet": "Net income $ 18,164 62,647 $ 35,291 $ 92,902",
+      "note": "Most of the increase comes from other income (expense), net of $53.4 billion, mainly upward adjustments to the Anthropic investment (see MD&A, Other Income). A good answer should not present it as operating improvement."
+    },
+    {
+      "id": "q03",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "What was the gross margin percentage, and what does the filing say drove the change?",
+      "answerable": false,
+      "expected_answer": null,
+      "evidence_snippet": "We believe that operating income is a more meaningful measure than gross profit and gross margin due to the diversity of our product categories and services.",
+      "note": "The filing does not report gross margin. A model could derive one from net sales and cost of sales, but that is calculated, not retrieved. Correct behavior: say it is not reported (optionally offer operating income: $27,461 million vs $19,171 million). Consider swapping this question for an operating-income question if you want 9 plain lookups."
+    },
+    {
+      "id": "q04",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "How did operating expenses change compared with the same quarter last year?",
+      "answerable": true,
+      "expected_answer": "Total operating expenses were $173,145 million in Q2 2026 versus $148,531 million in Q2 2025 (about 17% higher; computed, the filing gives growth by line: cost of sales +19%, fulfillment +14%, technology and infrastructure +22%, sales and marketing +2%, general and administrative -6%).",
+      "evidence_snippet": "Total operating expenses 148,531 173,145 285,793 330,812",
+      "note": "The 17% total is computed from the two figures; the filing does not state it."
+    },
+    {
+      "id": "q05",
+      "category": "factual",
+      "pillar": "3 Management's Discussion (MD&A)",
+      "question": "How much cash and marketable securities did the company hold at quarter end?",
+      "answerable": true,
+      "expected_answer": "About $123.0 billion in total cash, cash equivalents, and marketable securities as of June 30, 2026 (restricted amounts excluded).",
+      "evidence_snippet": "which, at fair value, were $123.0 billion as of December 31, 2025 and June 30, 2026.",
+      "note": "The same figure appears at December 31, 2025. The sentence also gives $20.4 billion held in foreign currencies at June 30, 2026.",
+      "alt_snippets": [
+        "Total cash, cash equivalents, and marketable securities $ 123,029 $ 122,988"
+      ]
+    },
+    {
+      "id": "q06",
+      "category": "factual",
+      "pillar": "3 Management's Discussion (MD&A)",
+      "question": "What does management say about liquidity and capital resources?",
+      "answerable": true,
+      "expected_answer": "Management believes operating cash flow plus cash, cash equivalents, marketable securities, and borrowing arrangements will be sufficient for operating cash needs for at least the next twelve months, while noting that projections of future cash needs are subject to substantial uncertainty. Operating cash flow was $45.4 billion in Q2 2026 versus $32.5 billion in Q2 2025.",
+      "evidence_snippet": "will be sufficient to meet our anticipated operating cash needs for at least the next twelve months."
+    },
+    {
+      "id": "q07",
+      "category": "factual",
+      "pillar": "4 Strategic Shifts & Macro",
+      "question": "How much did the company spend on share repurchases and dividends in the period?",
+      "answerable": true,
+      "expected_answer": "Nothing on repurchases: there were no repurchases of common stock in the six months ended June 30, 2025 or 2026, and $6.1 billion remained under the repurchase authorization. The filing reports no dividend payments.",
+      "evidence_snippet": "There were no repurchases of our common stock during the six months ended June 30, 2025 or 2026.",
+      "note": "'Pay dividends' appears only in a generic list of capital actions the company may consider. A good answer says zero for repurchases and that no dividends are reported, not that it paid them."
+    },
+    {
+      "id": "q08",
+      "category": "factual",
+      "pillar": "4 Strategic Shifts & Macro",
+      "question": "Which segment or product line grew fastest, and by how much?",
+      "answerable": true,
+      "expected_answer": "AWS grew fastest: net sales rose 37% in Q2 2026 ($42,232 million versus $30,873 million). North America grew 16% and International 15%.",
+      "evidence_snippet": "AWS sales increased 37% in Q2 2026, and 33% for the six months ended June 30, 2026 compared to the comparable prior year periods.",
+      "alt_snippets": [
+        "AWS 30,873 42,232 60,140"
+      ]
+    },
+    {
+      "id": "q09",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "What was diluted earnings per share for the quarter?",
+      "answerable": true,
+      "expected_answer": "Diluted EPS was $5.75 in Q2 2026 versus $1.68 in Q2 2025.",
+      "evidence_snippet": "Diluted earnings per share $ 1.68 5.75 $ 3.27 $ 8.53",
+      "note": "Same caveat as net income: the jump is driven by non-operating gains."
+    },
+    {
+      "id": "q10",
+      "category": "forward_looking",
+      "pillar": "1 Future Guidance",
+      "question": "Does the filing give specific guidance on future revenue or earnings? If so, what is it?",
+      "answerable": true,
+      "expected_answer": "Yes. Third Quarter 2026 guidance (given July 30, 2026): net sales of $197.0 billion to $202.0 billion, growth of 9% to 12% versus Q3 2025 (nearly 400 basis points higher excluding Prime Day timing; assumes about 80 basis points of unfavorable foreign exchange), and operating income of $22.5 billion to $26.5 billion versus $17.4 billion in Q3 2025.",
+      "evidence_snippet": "Net sales are expected to be between $197.0 billion and $202.0 billion",
+      "note": "CORRECTED. First version said the filing gives no numeric guidance; that was wrong. It has a 'Guidance' section with Q3 2026 ranges. The retrieval results exposed the error (the guidance chunk ranked first).",
+      "alt_snippets": [
+        "Operating income is expected to be between $22.5 billion and $26.5 billion"
+      ]
+    },
+    {
+      "id": "q11",
+      "category": "forward_looking",
+      "pillar": "1 Future Guidance",
+      "question": "What forward-looking statements does management make about demand or growth?",
+      "answerable": true,
+      "expected_answer": "Management gives Q3 2026 guidance: net sales of $197.0 billion to $202.0 billion (9% to 12% growth versus Q3 2025) and operating income of $22.5 billion to $26.5 billion. It also expects cash capital expenditures to increase in 2026 and expects its cost of shipping to continue to increase. No separate demand forecast is given.",
+      "evidence_snippet": "both of which we expect to increase in 2026.",
+      "note": "CORRECTED. First version missed the Guidance section; the guidance is the most direct answer. Capex and shipping statements are secondary.",
+      "alt_snippets": [
+        "We expect our cost of shipping to continue to increase",
+        "Net sales are expected to be between $197.0 billion and $202.0 billion"
+      ]
+    },
+    {
+      "id": "q12",
+      "category": "risk",
+      "pillar": "5 Red Flags & Risks",
+      "question": "What does the filing say about foreign exchange or currency risk?",
+      "answerable": true,
+      "expected_answer": "International was 21% of consolidated revenue in Q2 2026, and results of international stores and AWS are exposed to exchange-rate fluctuations. Exchange rates did not significantly affect Q2 net sales but increased net sales by $3.0 billion for the six months ended June 30, 2026.",
+      "evidence_snippet": "Changes in foreign exchange rates did not significantly impact net sales for Q2 2026, but increased net sales by $3.0 billion for the six months ended June 30, 2026.",
+      "alt_snippets": [
+        "During Q2 2026, net sales from our International segment accounted for 21% of our consolidated revenues."
+      ]
+    },
+    {
+      "id": "q13",
+      "category": "risk",
+      "pillar": "4 Strategic Shifts & Macro",
+      "question": "What does the filing say about tariffs, trade restrictions, or other macro headwinds?",
+      "answerable": true,
+      "expected_answer": "Two points. (1) Risk-factor language lists tariff policy changes and trade disputes among macro risks. (2) In Q2 2026 the company received about $640 million of tariff refunds under IEEPA, recorded mainly as a reduction to cost of sales and mostly in North America, described as the significant majority of refunds it expects to receive.",
+      "evidence_snippet": "we received approximately $ 640 million of tariff refunds under the International Emergency Economic Powers Act",
+      "note": "BROADENED. The question asks about tariffs and macro headwinds, so risk-factor language is also a valid answer. The refund is a tailwind; a good answer must not invent tariff costs.",
+      "alt_snippets": [
+        "Cost of sales in Q2 2026 includes tariff refunds received under the IEEPA.",
+        "laws and policies of the U.S. and other jurisdictions affecting trade (such as tariff policy changes)",
+        "labor or trade disputes, tariff policy changes, and similar events"
+      ]
+    },
+    {
+      "id": "q14",
+      "category": "risk",
+      "pillar": "5 Red Flags & Risks",
+      "question": "Are any legal proceedings or contingent liabilities disclosed?",
+      "answerable": true,
+      "expected_answer": "Yes. Part II, Item 1 describes: Illinois biometric-privacy litigation (Wilcosky v. Amazon.com, Hogan v. Amazon.com); cases filed since March 2020 by private litigants, state Attorneys General, and the FTC alleging, among other things, price-fixing arrangements; two complaints filed by Xockets, Inc. in June 2025 against Amazon.com and AWS; and regular patent and other claims. It states outcomes are inherently unpredictable. Tax disputes (including with the Indian tax authority) are also described in the notes.",
+      "evidence_snippet": "Beginning in June 2019 with Wilcosky v. Amazon.com, Inc., now pending in the United States District Court for the Northern District of Illinois",
+      "note": "Expected answer was built from the opening of each paragraph; read the full section before using it to grade detailed answers."
+    },
+    {
+      "id": "q15",
+      "category": "risk",
+      "pillar": "5 Red Flags & Risks",
+      "question": "Does the filing mention new accounting standards or changes in accounting policy?",
+      "answerable": true,
+      "expected_answer": "Yes: in November 2024 the FASB issued an ASU requiring more detailed expense disclosure, effective for annual periods beginning after December 15, 2026 and interim periods within fiscal years beginning after December 15, 2027; the company is evaluating its impact on disclosures. No other pronouncement is listed.",
+      "evidence_snippet": "In November 2024, the FASB issued an ASU amending existing income statement disclosure guidance, primarily requiring more detailed disclosure for expenses.",
+      "alt_snippets": [
+        "The ASU is effective for annual reporting periods beginning after December 15, 2026"
+      ]
+    },
+    {
+      "id": "q16",
+      "category": "unanswerable",
+      "pillar": "all",
+      "question": "What is the company's current stock price?",
+      "answerable": false,
+      "expected_answer": null,
+      "evidence_snippet": null,
+      "note": "'Stock price' appears only as a generic risk factor and tax variable; no price is stated."
+    },
+    {
+      "id": "q17",
+      "category": "unanswerable",
+      "pillar": "all",
+      "question": "What was the CEO's total compensation for the year?",
+      "answerable": false,
+      "expected_answer": null,
+      "evidence_snippet": null,
+      "note": "No executive compensation in the filing; the CEO's name appears only on the signature page."
+    },
+    {
+      "id": "q18",
+      "category": "unanswerable",
+      "pillar": "all",
+      "question": "What is the analyst consensus price target for the stock?",
+      "answerable": false,
+      "expected_answer": null,
+      "evidence_snippet": null,
+      "note": "'Analyst' appears only in a risk-factor list (changes in estimates and recommendations by securities analysts); no target is given."
+    },
+    {
+      "id": "q19",
+      "category": "unanswerable",
+      "pillar": "all",
+      "question": "What was revenue in the same quarter two years ago?",
+      "answerable": false,
+      "expected_answer": null,
+      "evidence_snippet": null,
+      "note": "The filing compares Q2 2026 with Q2 2025 only; '2024' appears only in tax and exhibit references."
+    },
+    {
+      "id": "q20",
+      "category": "unanswerable",
+      "pillar": "all",
+      "question": "What is the main competitor's market share?",
+      "answerable": false,
+      "expected_answer": null,
+      "evidence_snippet": null,
+      "note": "The phrase 'market share' does not appear in the filing."
+    }
+  ],
+  "_changelog": [
+    "2026-10-04: q10 changed from not-answerable to answerable (the filing contains Q3 2026 guidance). q11 expected answer rewritten around the guidance. q01 and q13 got extra alt_snippets. All new snippets verified present in filing_AMZN.txt."
+  ]
+}

@@ -1,0 +1,7 @@
+# Force explicit language tracking and metrics for SQL
+*.sql linguist-detectable=true
+*.sql linguist-language=SQL
+
+# Force explicit language tracking and metrics for Python
+*.py linguist-detectable=true
+*.py linguist-language=Python

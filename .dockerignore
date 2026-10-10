@@ -1,0 +1,18 @@
+# Keep secrets, virtual environments and evaluation data out of the image.
+.git/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+*.json.key
+*key*.json
+credentials*.json
+service_account*.json
+*.csv
+*.gif
+*.png
+*.md
+filing_*.txt
+eval_questions_*.json

@@ -1,0 +1,30 @@
+# NitroStox dependencies.
+# Minimum versions only. The old exact pins (mid-2024 releases) were removed because
+# yfinance, edgartools and google-genai have changed their APIs since then and the code
+# targets current releases. Once the app works for you, freeze what you tested:
+#   pip freeze > requirements.lock.txt
+# and install from that file when you need reproducible builds.
+
+# Web Framework & UI
+streamlit>=1.37            # st.fragment needs 1.37+
+
+# Data Manipulation & Math
+pandas>=2.2
+numpy>=1.26
+
+# Google Cloud & AI
+google-genai>=1.0
+google-cloud-bigquery[pandas]>=3.20   # [pandas] pulls pyarrow, needed by load_table_from_dataframe / to_dataframe
+db-dtypes>=1.2
+
+# Financial Data & SEC
+yfinance
+edgartools                 # provides the `edgar` module (not the unrelated edgar-tools package)
+requests                   # direct SEC download fallback
+beautifulsoup4             # HTML to text for the SEC fallback
+
+# Visualization
+plotly>=5.23
+
+# Environment Management
+python-dotenv>=1.0

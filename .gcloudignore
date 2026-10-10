@@ -1,0 +1,20 @@
+# What `gcloud run deploy --source .` uploads to Cloud Build.
+# Without this file gcloud falls back to .gitignore; being explicit guarantees
+# that .env, your virtual environment and key files are never uploaded.
+.git/
+.gitignore
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+*key*.json
+credentials*.json
+service_account*.json
+*.csv
+*.gif
+*.png
+*.md
+filing_*.txt
+eval_questions_*.json

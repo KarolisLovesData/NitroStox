@@ -1,0 +1,661 @@
+﻿run_at,id,category,answerable,question,expected_answer,rank_strict,rank_lenient,hit_at_3_lenient,hit_at_5_lenient,top5_chunk_ids,run,agent_called_sec_tool,agent_search_queries,agent_chunks_contain_snippet,agent_answer,grade,notes
+20261004_1701,q01,factual,True,"What was total revenue for the quarter, and how did it compare with the same quarter last year?","Total net sales were $200,606 million in Q2 2026 versus $167,702 million in Q2 2025, an increase of 20%.",,1,True,True,89 90 17 16 11,1,True,total net sales revenue quarterly comparison year over year,True,"For the three months ended June 30, 2026, **Amazon (AMZN)** reported total consolidated net sales (revenue) of **$200.61 billion**, representing a **19.6% year-over-year increase** (20% on an FX-neutral basis) compared to **$167.70 billion** in the prior-year period (Q2 2025).
+
+---
+
+### **Segment Breakdown (Three Months Ended June 30):**
+
+| Segment | Q2 2026 Revenue | Q2 2025 Revenue | YoY Growth (%) |
+| :--- | :--- | :--- | :--- |
+| **North America** | $116.18B | $100.07B | +16.1% |
+| **AWS** | $42.23B | $30.87B | +36.8% |
+| **International** | $42.20B | $36.76B | +14.8% |
+| **Consolidated Total** | **$200.61B** | **$167.70B** | **+19.6%** |
+
+### **Key Takeaway:**
+Growth was substantially led by **AWS (+36.8% YoY)**, alongside steady double-digit expansions across North America (+16.1%) and International (+14.8%) retail operations.",,
+20261004_1701,q01,factual,True,"What was total revenue for the quarter, and how did it compare with the same quarter last year?","Total net sales were $200,606 million in Q2 2026 versus $167,702 million in Q2 2025, an increase of 20%.",,1,True,True,89 90 17 16 11,2,True,total net sales revenue three months ended quarterly comparison,True,"According to Amazon's (AMZN) latest SEC 10-Q filing for the quarter ended **June 30, 2026**:
+
+### **Total Revenue (Net Sales) Summary**
+* **Quarter Net Sales (Q2 2026):** **$200,606 million** ($200.61 billion)
+* **Prior Year Quarter (Q2 2025):** **$167,702 million** ($167.70 billion)
+* **Year-over-Year Growth:** **+19.6% (~20%)** (or **+20%** excluding the effect of foreign exchange rates)
+
+---
+
+### **Segment Breakdown (Three Months Ended June 30):**
+
+| Segment | Q2 2025 ($M) | Q2 2026 ($M) | YoY Growth | YoY Growth (ex-FX) |
+| :--- | :--- | :--- | :--- | :--- |
+| **North America** | $100,068 | $116,177 | +16% | +16% |
+| **International** | $36,761 | $42,197 | +15% | +15% |
+| **AWS** | $30,873 | $42,232 | +37% | +37% |
+| **Consolidated Total** | **$167,702** | **$200,606** | **+20%** | **+20%** |",,
+20261004_1701,q02,factual,True,What was net income for the quarter?,"Net income was $62,647 million in Q2 2026 versus $18,164 million in Q2 2025.",2,2,True,True,14 12 72 11 64,1,True,net income quarterly results consolidated statements of operations,True,"According to Amazon's (AMZN) latest quarterly filing:
+
+- **Net Income (Quarter):** **$18.16 billion** (compared to $62.65 billion in the prior period shown)
+- **Diluted EPS:** **$1.68** (Basic EPS: $1.71)
+- **Operating Income:** **$19.17 billion**
+- **Income Before Income Taxes:** **$20.86 billion** (with a tax provision of $(2.68) billion)",,
+20261004_1701,q02,factual,True,What was net income for the quarter?,"Net income was $62,647 million in Q2 2026 versus $18,164 million in Q2 2025.",2,2,True,True,14 12 72 11 64,2,True,net income quarterly financial results consolidated statements of operations,True,"According to the latest SEC filing for **Amazon (AMZN)**:
+
+* **Net Income (Quarter):** **$18.164 billion** ($18,164 million)
+* **Diluted Earnings Per Share (EPS):** **$1.68** (vs. $1.71 Basic EPS)
+* **Operating Income (Quarter):** **$19.171 billion**
+* **Consolidated Net Sales:** **$167.702 billion**",,
+20261004_1701,q03,factual,False,"What was the gross margin percentage, and what does the filing say drove the change?",,4,4,False,True,94 11 93 101 88,1,True,gross margin cost of sales revenue drivers | Cost of sales primarily consists of increased decreased drivers net sales,False,"### Gross Margin Summary (Amazon / AMZN)
+
+* **Q2 2026 Gross Margin:** **52.3%** (Cost of Sales was **47.7%** of net sales), expanding **+50 bps** year-over-year compared to **51.8%** (Cost of Sales was **48.2%**) in Q2 2025.
+* **Six Months Ended June 30, 2026 Gross Margin:** **52.0%** (Cost of Sales was **48.0%** of net sales), expanding **+80 bps** year-over-year compared to **51.2%** (Cost of Sales was **48.8%**) for the comparable prior-year period.
+
+---
+
+### Key Drivers of Change (per SEC 10-Q Filing)
+
+1. **Sales Volume & Shipping Costs:**
+   * Absolute cost of sales increased (up **19% YoY** in Q2 to $95.8B and **16% YoY** in 6M to $183.2B) primarily due to higher product and shipping expenses driven by overall unit and sales volume growth.
+   * Total shipping costs reached **$27.9B** in Q2 2026 (vs. $23.4B in Q2 2025) and **$53.6B** for 6M 2026 (vs. $45.9B in 6M 2025).
+
+2. **Operational Efficiencies & Tariff Refunds:**
+   * Margin expansion as a percentage of net sales was driven by continuous **operational efficiencies** and **tariff refunds** received under the International Emergency Economic Powers Act (IEEPA) in Q2 2026.
+
+3. **Foreign Exchange Impact:**
+   * FX rate fluctuations did not materially impact Q2 2026 alone, but increased cost of sales by **$1.8 billion** across the six months ended June 30, 2026.",,
+20261004_1701,q03,factual,False,"What was the gross margin percentage, and what does the filing say drove the change?",,4,4,False,True,94 11 93 101 88,2,True,gross margin cost of sales revenue drivers | Cost of sales primarily consists of increased decreased drivers net sales,False,"### **Gross Margin Overview (AMZN)**
+
+* **Q2 2026 Gross Margin:** **52.3%** *(Cost of sales was 47.7% of net sales, improving from 48.2% in Q2 2025 / 51.8% gross margin)*.
+* **Six Months Ended June 30, 2026 Gross Margin:** **52.0%** *(Cost of sales was 48.0% of net sales, improving from 48.8% in 6M 2025 / 51.2% gross margin)*.
+
+---
+
+### **Key Drivers of the Change**
+
+According to the SEC 10-Q filing:
+
+1. **Volume Growth & Shipping Costs:** Absolute Cost of Sales increased (to **$95.8B** in Q2 2026 from **$80.8B** in Q2 2025) primarily due to increased product and inbound/outbound shipping costs driven by higher overall sales volumes. Shipping costs rose to **$27.9B** in Q2 2026 (vs. $23.4B in Q2 2025).
+2. **Operational Efficiencies:** Margin expansion was supported by operational efficiencies across the fulfillment and delivery networks.
+3. **Tariff Refunds:** Cost of sales in Q2 2026 benefited from tariff refunds received under the International Emergency Economic Powers Act (IEEPA).
+4. **Foreign Exchange Impact:** FX fluctuations did not significantly affect Q2 2026 cost of sales, but increased cost of sales by **$1.8 billion** for the six months ended June 30, 2026.",,
+20261004_1701,q04,factual,True,How did operating expenses change compared with the same quarter last year?,"Total operating expenses were $173,145 million in Q2 2026 versus $148,531 million in Q2 2025 (about 17% higher; computed, the filing gives growth by line: cost of sales +19%, fulfillment +14%, technology and infrastructure +22%, sales and marketing +2%, general and administrative -6%).",3,3,True,True,93 94 11 71 6,1,True,operating expenses compared to prior year quarter,True,"According to Amazon's latest SEC 10-Q filing for the quarter ended **June 30**, total operating expenses increased by **16.6% YoY** to **$173,145 million** (compared to **$148,531 million** in the prior-year period).
+
+### **Operating Expense Breakdown (Three Months Ended June 30)**
+
+| Expense Category | Prior Year Quarter ($M) | Current Quarter ($M) | YoY Change (%) | % of Net Sales |
+| :--- | :--- | :--- | :--- | :--- |
+| **Cost of sales** | $80,809 | $95,778 | **+18.5%** (+19%) | 47.7% (vs. 48.2%) |
+| **Fulfillment** | $25,976 | $29,633 | **+14.1%** (+14%) | 14.8% (vs. 15.5%) |
+| **Technology and infrastructure** | $27,166 | $33,158 | **+22.1%** (+22%) | 16.5% (vs. 16.2%) |
+| **Sales and marketing** | $11,416 | $11,698 | **+2.5%** (+2%) | 5.8% (vs. 6.8%) |
+| **General and administrative** | $2,965 | $2,788 | **-6.0%** (-6%) | 1.4% (vs. 1.8%) |
+| **Other operating expense (income), net** | $199 | $90 | **-54.8%** (-54%) | — |
+| **Total Operating Expenses** | **$148,531** | **$173,145** | **+16.6%** | **—** |
+
+### **Key Takeaways:**
+* **Technology & Infrastructure** drove the highest percentage growth (+22%), reflecting expanded cloud and AI infrastructure investments.
+* **Cost of Sales** and **Fulfillment** grew +19% and +14% respectively, supporting higher sales volumes while realizing mild operational leverage as a percentage of net sales.
+* **S&M and G&A Discipline:** General & administrative expenses declined by 6%, and sales & marketing growth moderated significantly to +2.5% (contracting 100 bps as a percentage of revenue).",,
+20261004_1701,q04,factual,True,How did operating expenses change compared with the same quarter last year?,"Total operating expenses were $173,145 million in Q2 2026 versus $148,531 million in Q2 2025 (about 17% higher; computed, the filing gives growth by line: cost of sales +19%, fulfillment +14%, technology and infrastructure +22%, sales and marketing +2%, general and administrative -6%).",3,3,True,True,93 94 11 71 6,2,True,operating expenses operating costs year over year,True,"According to Amazon's latest SEC 10-Q filing (Three Months Ended June 30), **Total Operating Expenses** increased by **16.6%** year-over-year from **$148,531 million** to **$173,145 million**.
+
+---
+
+### **Operating Expense Breakdown (Three Months Ended June 30)**
+
+| Expense Category | Q2 Prior ($M) | Q2 Current ($M) | YoY Change (%) | % of Net Sales (Current vs Prior) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Cost of sales** | $80,809 | $95,778 | **+19%** | 47.7% vs 48.2% |
+| **Technology and infrastructure** | $27,166 | $33,158 | **+22%** | 16.5% vs 16.2% |
+| **Fulfillment** | $25,976 | $29,633 | **+14%** | 14.8% vs 15.5% |
+| **Sales and marketing** | $11,416 | $11,698 | **+2%** | 5.8% vs 6.8% |
+| **General and administrative** | $2,965 | $2,788 | **-6%** | 1.4% vs 1.8% |
+| **Other operating expense (income), net** | $199 | $90 | **-54%** | ~0.0% vs 0.1% |
+| **Total Operating Expenses** | **$148,531** | **$173,145** | **+16.6%** | — |
+
+---
+
+### **Key Takeaways**
+* **Technology & Infrastructure (+22% YoY):** Primary growth driver on an operating cost basis, reflecting continued capacity investments in AWS, cloud infrastructure, and AI hardware.
+* **Operating Leverage in Sales & G&A:** Sales & marketing grew by only 2% YoY and G&A declined by 6% YoY, demonstrating cost discipline and operational efficiency as a percentage of net sales.",,
+20261004_1701,q05,factual,True,How much cash and marketable securities did the company hold at quarter end?,"About $123.0 billion in total cash, cash equivalents, and marketable securities as of June 30, 2026 (restricted amounts excluded).",,1,True,True,34 16 32 35 8,1,True,cash cash equivalents and marketable securities quarter end balance sheet,True,"According to Amazon’s latest quarterly balance sheet (as of June 30, 2026):
+
+* **Cash and Cash Equivalents:** **$78,213 million** (~$78.21 billion)
+* **Marketable Securities:** **$44,775 million** (~$44.78 billion)
+* **Total Cash, Cash Equivalents, and Marketable Securities:** **$122,988 million** (~**$122.99 billion**)
+
+*(For comparison, Amazon held **$123,029 million** in total cash, cash equivalents, and marketable securities as of December 31, 2025: $86.81B in cash/cash equivalents and $36.22B in marketable securities).*",,
+20261004_1701,q05,factual,True,How much cash and marketable securities did the company hold at quarter end?,"About $123.0 billion in total cash, cash equivalents, and marketable securities as of June 30, 2026 (restricted amounts excluded).",,1,True,True,34 16 32 35 8,2,True,cash cash equivalents marketable securities balance sheet,True,"According to Amazon's latest Form 10-Q balance sheet, the breakdown of cash and marketable securities is as follows:
+
+### **Cash & Marketable Securities Breakdown**
+* **Cash and cash equivalents:** **$78,213 million** (~$78.21B)
+* **Marketable securities:** **$44,775 million** (~$44.78B)
+* **Total Cash & Marketable Securities (Gross):** **$122,988 million** (~$122.99B) *(or $125,702 million gross before $2,714 million in restricted cash, cash equivalents, and marketable securities)*
+
+---
+*For comparison, at the prior period end, Amazon held **$86,810 million** in cash and cash equivalents and **$36,219 million** in marketable securities (totaling **$123,029 million**).*",,
+20261004_1701,q06,factual,True,What does management say about liquidity and capital resources?,"Management believes operating cash flow plus cash, cash equivalents, marketable securities, and borrowing arrangements will be sufficient for operating cash needs for at least the next twelve months, while noting that projections of future cash needs are subject to substantial uncertainty. Operating cash flow was $45.4 billion in Q2 2026 versus $32.5 billion in Q2 2025.",3,3,True,True,82 83 87 86 34,1,True,liquidity and capital resources,False,"Based on Amazon's latest SEC 10-Q filing, management highlights the following key points regarding **Liquidity and Capital Resources**:
+
+---
+
+### **1. Liquidity Position & Cash Balances**
+* **Total Cash & Marketable Securities:** Amazon held **$123.0 billion** in total cash, cash equivalents, and marketable securities (at fair value) as of June 30, 2026 (flat compared to December 31, 2025).
+* **Foreign Currency Reserves:** Foreign currency holdings stood at **$20.4 billion** (down from $29.7 billion at year-end 2025), diversified across British Pounds, Canadian Dollars, Euros, Indian Rupees, and Japanese Yen.
+* **Restricted Cash:** Pledged/restricted cash and marketable debt securities amounted to **$2.71 billion**, primarily serving as collateral for real estate leases, third-party seller liabilities, debt, letters of credit, and digital media licenses.
+
+---
+
+### **2. Operating Cash Flow Performance**
+* **Q2 Cash Flow from Operations:** **$45.4 billion** in Q2 2026, up **39.6% YoY** from $32.5 billion in Q2 2025.
+* **6-Month Cash Flow from Operations:** **$71.4 billion** for the first six months of 2026, compared to $49.5 billion in the prior-year period.
+* **Key Drivers:** Growth in operating cash flows was primarily driven by higher net income (excluding non-cash items) and disciplined working capital management across consumer, enterprise, AWS, and advertising revenue streams.
+
+---
+
+### **3. Investing & Financing Activities**
+* **Investing Activities / CapEx:** Cash used in investing activities was **$143.5 billion** for the first six months of 2026 (compared to $69.2 billion in 6M 2025), reflecting significant investments in cash capital expenditures (infrastructure, data centers, and fulfillment).
+* **Financing Activities:** Cash provided by financing activities was **$62.9 billion** for 6M 2026 (compared to $(2.6) billion used in 6M 2025).",,
+20261004_1701,q06,factual,True,What does management say about liquidity and capital resources?,"Management believes operating cash flow plus cash, cash equivalents, marketable securities, and borrowing arrangements will be sufficient for operating cash needs for at least the next twelve months, while noting that projections of future cash needs are subject to substantial uncertainty. Operating cash flow was $45.4 billion in Q2 2026 versus $32.5 billion in Q2 2025.",3,3,True,True,82 83 87 86 34,2,True,liquidity and capital resources,False,"Based on Amazon's (AMZN) SEC 10-Q filing, management outlines the following regarding **Liquidity and Capital Resources**:
+
+---
+
+### **1. Principal Sources of Liquidity**
+* **Cash & Marketable Securities:** Total cash, cash equivalents, and marketable securities stood at **$123.0 billion** as of June 30, 2026 (flat compared to December 31, 2025).
+* **Foreign Currency Holdings:** **$20.4 billion** of the total liquidity was held in foreign currencies (primarily GBP, CAD, EUR, INR, and JPY), compared to $29.7 billion at year-end 2025.
+* **Restricted Cash/Securities:** **$2.71 billion** was pledged or restricted (primarily as collateral for real estate, third-party seller obligations, debt, letters of credit, and digital media licenses).
+
+---
+
+### **2. Cash Flow Dynamics**
+
+* **Operating Cash Flow (OCF):**
+  * **Q2 2026:** **$45.4 billion** (vs. $32.5 billion in Q2 2025).
+  * **6M Ended June 30, 2026:** **$71.4 billion** (vs. $49.5 billion in 6M 2025).
+  * **TTM Ended June 30, 2026:** **$161.4 billion** (up from $121.1 billion in the prior period).
+  * *Driver:* Growth was primarily driven by higher net income (excluding non-cash items) and positive working capital changes across customer segments (consumer, enterprise/AWS, sellers, and advertising).
+
+* **Investing Cash Flow:**
+  * **Q2 2026:** **$(79.2) billion** used (vs. $(39.4) billion in Q2 2025).
+  * **6M Ended June 30, 2026:** **$(143.5) billion** used (vs. $(69.2) billion in 6M 2025).
+  * *Driver:* Primarily corresponds to aggressive cash capital expenditures (infrastructure, data centers, and fulfillment network expansion).
+
+* **Financing Cash Flow:**
+  * **Q2 2026:** **$10.1 billion** provided (vs. $(2.5) billion used in Q2 2025).
+  * **6M Ended June 30, 2026:** **$62.9 billion** provided (vs. $(2.6) billion used in 6M 2025).
+
+---
+
+### **Summary Takeaway**
+Management views operating cash flows and its **$123.0B** liquid reserve as sufficient to fund ongoing working capital needs, tax controversies, and heavily accelerated capital investment programs (capex).",,
+20261004_1701,q07,factual,True,How much did the company spend on share repurchases and dividends in the period?,"Nothing on repurchases: there were no repurchases of common stock in the six months ended June 30, 2025 or 2026, and $6.1 billion remained under the repurchase authorization. The filing reports no dividend payments.",,,False,False,8 12 60 7 23,1,True,share repurchases common stock repurchase dividends | statement of cash flows financing activities dividend repurchase,True,"According to Amazon’s latest SEC 10-Q filing:
+
+* **Share Repurchases:** **$0** 
+  * There were no common stock repurchases during the six months ended June 30, 2025 or June 30, 2026. 
+  * As of June 30, 2026, **$6.1 billion** remained available under the Board’s March 2022 $10.0 billion share repurchase authorization.
+* **Dividends:** **$0** 
+  * Amazon does not pay cash dividends on its common stock, and no dividend distributions were made during the period.",,
+20261004_1701,q07,factual,True,How much did the company spend on share repurchases and dividends in the period?,"Nothing on repurchases: there were no repurchases of common stock in the six months ended June 30, 2025 or 2026, and $6.1 billion remained under the repurchase authorization. The filing reports no dividend payments.",,,False,False,8 12 60 7 23,2,True,share repurchases common stock repurchase dividends cash flows financing activities | repurchase of common stock share repurchase program dividends paid,True,"Based on Amazon’s (AMZN) latest SEC 10-Q filing:
+
+### 1. **Share Repurchases: $0**
+* **Activity:** There were **no repurchases** of common stock during the six months ended June 30, 2026 (or during the comparative prior-year period).
+* **Authorization:** In March 2022, the Board authorized a **$10.0 billion** common stock repurchase program with no fixed expiration date. As of June 30, 2026, **$6.1 billion** remains available under this authorization.
+
+### 2. **Dividends: $0**
+* Amazon does not currently pay a cash dividend on its common stock, and zero cash was distributed to shareholders as dividends during the period.
+
+---
+**Summary:** Total capital returned to shareholders via buybacks and dividends in the period was **$0.00**.",,
+20261004_1701,q08,factual,True,"Which segment or product line grew fastest, and by how much?","AWS grew fastest: net sales rose 37% in Q2 2026 ($42,232 million versus $30,873 million). North America grew 16% and International 15%.",,2,True,True,90 89 93 71 91,1,True,segment revenue growth AWS North America International product line year over year percentage | Online stores Third-party seller services Advertising services Subscription services AWS Net Sales by Groups of Similar Products and Services,True,"Based on Amazon's latest Form 10-Q filing (Three Months Ended June 30, 2026 vs. June 30, 2025):
+
+---
+
+### **1. Fastest-Growing Segment: AWS (Amazon Web Services)**
+* **Growth Rate:** **+36.8% YoY** (37% reported / 37% FX-neutral)
+* **Revenue:** Grew from **$30,873M** (Q2 2025) to **$42,232M** (Q2 2026).
+* *Six-month period growth:* **+32.7% YoY** (from $60,140M to $79,819M).
+
+---
+
+### **Segment Growth Comparison (Q2 YoY):**
+1. **AWS:** **+36.8%** ($30,873M $\rightarrow$ $42,232M)
+2. **North America:** **+16.1%** ($100,068M $\rightarrow$ $116,177M)
+3. **International:** **+14.8%** ($36,761M $\rightarrow$ $42,197M)
+
+---
+
+### **2. Product & Service Line Growth Breakdown (Q2 YoY):**
+1. **AWS:** **+36.8%** ($30,873M $\rightarrow$ $42,232M)
+2. **Advertising Services:** **+26.2%** ($15,694M $\rightarrow$ $19,809M)
+3. **Other:** **+22.0%** ($1,499M $\rightarrow$ $1,829M)
+4. **Third-Party Seller Services:** **+15.9%** ($40,348M $\rightarrow$ $46,780M)
+5. **Online Stores:** **+14.6%** ($61,485M $\rightarrow$ $70,432M)
+6. **Subscription Services:** **+12.5%** ($12,208M $\rightarrow$ $13,730M)
+7. **Physical Stores:** **+3.6%** ($5,595M $\rightarrow$ $5,794M)",,
+20261004_1701,q08,factual,True,"Which segment or product line grew fastest, and by how much?","AWS grew fastest: net sales rose 37% in Q2 2026 ($42,232 million versus $30,873 million). North America grew 16% and International 15%.",,2,True,True,90 89 93 71 91,2,True,segment revenue growth AWS North America International advertising subscription | Online stores Physical stores Third-party seller services Advertising services Subscription services growth,True,"Based on Amazon's latest Form 10-Q filing (for the period ended June 30, 2026), **AWS (Amazon Web Services)** was the fastest-growing segment and product line.
+
+---
+
+### **1. Reportable Segments (YoY Growth)**
+
+| Segment | Three Months Ended June 30, 2025 | Three Months Ended June 30, 2026 | YoY Growth (Reported) | YoY Growth (ex-FX) |
+| :--- | :--- | :--- | :--- | :--- |
+| **AWS** | **$30,873M** | **$42,232M** | **+36.8% (+37%)** | **+37%** |
+| **North America** | $100,068M | $116,177M | +16.1% (+16%) | +16% |
+| **International** | $36,761M | $42,197M | +14.8% (+15%) | +15% |
+| **Consolidated** | $167,702M | $200,606M | +19.6% (+20%) | +20% |
+
+*For the six-month period ended June 30, 2026, AWS also led segment growth at **+32.7% (+33% YoY)**, increasing from $60,140M to $79,819M.*
+
+---
+
+### **2. Breakdown Across Product & Service Lines (Q2 YoY Growth)**
+
+1. **AWS:** **+36.8%** ($30,873M → $42,232M) — *Fastest*
+2. **Advertising services:** **+26.2%** ($15,694M → $19,809M)
+3. **Other:** **+22.0%** ($1,499M → $1,829M)
+4. **Third-party seller services:** **+15.9%** ($40,348M → $46,780M)
+5. **Online stores:** **+14.5%** ($61,485M → $70,432M)
+6. **Subscription services:** **+12.5%** ($12,208M → $13,730M)
+7. **Physical stores:** **+3.6%** ($5,595M → $5,794M)",,
+20261004_1701,q09,factual,True,What was diluted earnings per share for the quarter?,Diluted EPS was $5.75 in Q2 2026 versus $1.68 in Q2 2025.,1,1,True,True,12 24 23 13 14,1,True,diluted earnings per share net income per share | Consolidated Statements of Operations Three Months Ended June 30 Diluted earnings per share,True,"According to Amazon's (**AMZN**) latest Form 10-Q filing for the period ended June 30:
+
+### **Earnings Per Share Summary**
+
+* **Three Months Ended June 30, 2026:**
+  * **Diluted Earnings Per Share:** **$5.75** *(vs. $1.68 in Q2 2025)*
+  * **Basic Earnings Per Share:** **$5.82** *(vs. $1.71 in Q2 2025)*
+  * **Diluted Weighted-Average Shares:** **10,903 million** *(vs. 10,806 million in Q2 2025)*
+  * **Net Income:** **$62,647 million** *(vs. $18,164 million in Q2 2025)*
+
+* **Six Months Ended June 30, 2026 (YTD):**
+  * **Diluted Earnings Per Share:** **$8.53** *(vs. $3.27 in 6M 2025)*
+  * **Basic Earnings Per Share:** **$8.64** *(vs. $3.32 in 6M 2025)*",,
+20261004_1701,q09,factual,True,What was diluted earnings per share for the quarter?,Diluted EPS was $5.75 in Q2 2026 versus $1.68 in Q2 2025.,1,1,True,True,12 24 23 13 14,2,True,diluted earnings per share net income per share | Consolidated Statements of Operations Three Months Ended June 30 Diluted earnings per share,True,"According to Amazon's (**AMZN**) latest quarterly filing (Three Months Ended June 30):
+
+* **Diluted Earnings Per Share (EPS):** **$5.75** (compared to **$1.68** in the prior-year period)
+* **Basic Earnings Per Share (EPS):** **$5.82** (compared to **$1.71** in the prior-year period)
+
+### Key Underlying Metrics:
+* **Net Income:** **$62,647 million** (vs. $18,164 million in the prior-year quarter)
+* **Diluted Weighted-Average Shares:** **10,903 million** (vs. 10,806 million in the prior-year quarter)
+* **Basic Weighted-Average Shares:** **10,769 million** (vs. 10,637 million in the prior-year quarter)",,
+20261004_1701,q10,forward_looking,True,"Does the filing give specific guidance on future revenue or earnings? If so, what is it?","Yes. Third Quarter 2026 guidance (given July 30, 2026): net sales of $197.0 billion to $202.0 billion, growth of 9% to 12% versus Q3 2025 (nearly 400 basis points higher excluding Prime Day timing; assumes about 80 basis points of unfavorable foreign exchange), and operating income of $22.5 billion to $26.5 billion versus $17.4 billion in Q3 2025.",1,1,True,True,107 89 93 72 104,1,True,future guidance revenue operating income earnings outlook,True,"Yes, the filing includes specific forward-looking guidance for **Third Quarter 2026** (as furnished on Form 8-K on July 30, 2026):
+
+---
+
+### **Q3 2026 Guidance Summary**
+
+* **Net Sales:** 
+  * **$197.0 billion to $202.0 billion**
+  * Represents **9% to 12%** YoY growth compared to Q3 2025.
+  * Anticipates an unfavorable FX impact of approximately **80 basis points**.
+  * Excluding the impact of Prime Day timing across both years, YoY growth would be nearly **400 basis points higher**.
+
+* **Operating Income:** 
+  * **$22.5 billion to $26.5 billion** (up from **$17.4 billion** in Q3 2025).
+
+* **Key Assumptions:**
+  * Assumes no impact from energy derivative contract remeasurements.
+  * Assumes no additional business acquisitions, restructurings, or legal settlements are concluded.",,
+20261004_1701,q10,forward_looking,True,"Does the filing give specific guidance on future revenue or earnings? If so, what is it?","Yes. Third Quarter 2026 guidance (given July 30, 2026): net sales of $197.0 billion to $202.0 billion, growth of 9% to 12% versus Q3 2025 (nearly 400 basis points higher excluding Prime Day timing; assumes about 80 basis points of unfavorable foreign exchange), and operating income of $22.5 billion to $26.5 billion versus $17.4 billion in Q3 2025.",1,1,True,True,107 89 93 72 104,2,True,future guidance revenue operating income outlook,True,"Yes, the filing includes specific forward-looking guidance for the **Third Quarter of 2026** (originally furnished on July 30, 2026):
+
+### **1. Revenue (Net Sales)**
+* **Guidance Range:** **$197.0 billion – $202.0 billion**
+* **Growth Rate:** Expected year-over-year growth between **9% and 12%** compared to Q3 2025.
+* **FX & Calendar Impact:** 
+  * Anticipates an unfavorable foreign exchange impact of approximately **80 basis points**.
+  * Excluding the impact of Prime Day in both years, Q3 2026 YoY growth would be nearly **400 basis points higher**.
+
+---
+
+### **2. Earnings (Operating Income)**
+* **Guidance Range:** **$22.5 billion – $26.5 billion** (compared to $17.4 billion in Q3 2025).
+* **Assumptions:** Assumes no impact from energy derivative contract remeasurements and no additional business acquisitions, restructurings, or legal settlements.",,
+20261004_1701,q11,forward_looking,True,What forward-looking statements does management make about demand or growth?,Management gives Q3 2026 guidance: net sales of $197.0 billion to $202.0 billion (9% to 12% growth versus Q3 2025) and operating income of $22.5 billion to $26.5 billion. It also expects cash capital expenditures to increase in 2026 and expects its cost of shipping to continue to increase. No separate demand forecast is given.,,4,False,True,89 78 93 107 79,1,True,forward looking statements demand growth guidance outlook,True,"Based on Amazon’s latest SEC 10-Q filing, management highlighted the following forward-looking statements regarding growth, demand, and operational outlook:
+
+---
+
+### **1. Financial & Growth Guidance (Q3 2026)**
+* **Net Sales Growth:** Expected between **$197.0 billion and $202.0 billion**, representing **9% to 12% YoY growth** compared to Q3 2025.
+  * *Adjusted Growth:* Excluding the shifting impact of Prime Day in both periods, YoY growth is projected to be **~400 basis points higher**.
+  * *FX Headwinds:* Guidance anticipates an unfavorable foreign exchange impact of approximately **80 basis points**.
+* **Operating Income:** Projected between **$22.5 billion and $26.5 billion** (up from $17.4 billion in Q3 2025).
+
+---
+
+### **2. Growth Drivers & Demand Assumptions**
+Management identifies secular and operational factors expected to influence future demand and top-line trajectory:
+* **Cloud & Emerging Technologies:** Continued demand expansion in **AWS, cloud services, and new/emerging technologies** (e.g., AI workloads).
+* **E-Commerce & Digital Trends:** Sustained long-term growth across internet adoption, online retail penetration, and international market expansion.
+* **Service vs. Product Mix:** Margin and revenue composition evolving as third-party seller services, advertising, and subscription streams scale.
+
+---
+
+### **3. Key Risks & Uncertainties to Demand/Growth**
+Management notes that actual demand and performance may fluctuate due to:
+* **Customer Spending & Macro Volatility:** Sensitivity to consumer discretionary spending, inflation, interest rates, and recessionary concerns.
+* **Supply Chain & Resource Constraints:** Supply volatility for critical infrastructure components, particularly **memory chips and data center capacity**.
+* **Operational Execution:** Balancing heavy infrastructure investments (fulfillment, sortation, delivery, and data center optimization) with unit economics and capacity utilization.",,
+20261004_1701,q11,forward_looking,True,What forward-looking statements does management make about demand or growth?,Management gives Q3 2026 guidance: net sales of $197.0 billion to $202.0 billion (9% to 12% growth versus Q3 2025) and operating income of $22.5 billion to $26.5 billion. It also expects cash capital expenditures to increase in 2026 and expects its cost of shipping to continue to increase. No separate demand forecast is given.,,4,False,True,89 78 93 107 79,2,True,demand growth revenue outlook guidance forward-looking | AWS cloud demand capex AI capacity,True,"Based on Amazon’s latest SEC 10-Q filing, management provides the following forward-looking statements and guidance regarding demand and growth:
+
+---
+
+### **1. Q3 2026 Financial Guidance & Revenue Growth**
+* **Net Sales:** Expected to be between **$197.0 billion and $202.0 billion**, representing year-over-year growth of **9% to 12%** compared to Q3 2025.
+  * *Prime Day Impact:* Excluding the timing impact of Prime Day across both periods, Q3 2026 YoY growth would be approximately **400 basis points higher**.
+  * *Foreign Exchange:* Guidance factors in an estimated **~80 bps unfavorable FX headwind**.
+* **Operating Income:** Projected between **$22.5 billion and $26.5 billion** (up from $17.4 billion in Q3 2025).
+
+---
+
+### **2. Technology Infrastructure & AWS Growth Demand**
+* **Capital Expenditures:** Management expects **cash capital expenditures to increase throughout 2026**, primarily to support:
+  * **AWS Business Growth:** Rapidly expanding technology infrastructure to satisfy cloud and computing demand.
+  * **AI & Machine Learning:** Technology and infrastructure spending is projected to increase over time as Amazon scales capacity for generative AI, ML initiatives, and strategic commercial arrangements (e.g., OpenAI AWS provisioning and custom chips, Anthropic collaboration).
+  * **Fulfillment Capacity:** Additional network investments to support retail demand and throughput.
+
+---
+
+### **3. Key Demand Drivers and Uncertainties Cited**
+Management notes that forward growth trajectories remain subject to:
+* **Customer Spending & Macro Volatility:** Consumer demand sensitivity to inflation, interest rates, and recessionary concerns.
+* **Supply Chain & Resource Constraints:** Supply chain volatility, particularly around hardware infrastructure such as **memory chips** and energy resources for data centers.
+* **Adoption Rates:** The long-term growth and adoption rates of cloud services, online commerce, and emerging technologies.",,
+20261004_1701,q12,risk,True,What does the filing say about foreign exchange or currency risk?,"International was 21% of consolidated revenue in Q2 2026, and results of international stores and AWS are exposed to exchange-rate fluctuations. Exchange rates did not significantly affect Q2 net sales but increased net sales by $3.0 billion for the six months ended June 30, 2026.",,2,True,True,109 108 123 110 147,1,True,foreign exchange currency risk,True,"According to Amazon's filing (Item 3: *Quantitative and Qualitative Disclosures About Market Risk*), the key points regarding **foreign exchange (FX) risk** include:
+
+### 1. Operational & Revenue Exposure
+* **Functional Currencies:** Net sales and related expenses for international stores (and stores in Canada/Mexico within North America) are primarily denominated in local currencies, predominantly the **Euro (€)**, **British Pound (£)**, and **Japanese Yen (¥)**.
+* **Top-Line Impact:** In Q2 2026, the International segment accounted for **21% of consolidated net sales**. Currency fluctuations caused International segment net sales to **decrease by $82 million** year-over-year compared to Q2 2025.
+
+---
+
+### 2. Balance Sheet & Cash Sensitivity Analysis (as of June 30, 2026)
+* **Foreign Funds Exposure:** Amazon holds **$20.4 billion** in foreign-denominated cash, cash equivalents, and marketable securities:
+  * **5% adverse FX shift:** −$1.0 billion decline
+  * **10% adverse FX shift:** −$2.0 billion decline
+  * **20% adverse FX shift:** −$4.1 billion decline
+* **Intercompany Balances Exposure:** For foreign currency-denominated intercompany balances, potential losses recorded in *Other income (expense), net* under adverse FX movements are:
+  * **5% adverse shift:** −$400 million
+  * **10% adverse shift:** −$795 million
+  * **20% adverse shift:** −$1.6 billion
+
+---
+
+### 3. Hedging & Foreign Debt
+* **Net Investment Hedges:** Amazon has designated **$20.7 billion** of its Euro- and Canadian Dollar-denominated unsecured senior notes as net investment hedges to mitigate FX exposure from translating foreign operations into U.S. dollars.
+* **Accounting Treatment:** Unrealized FX gains and losses on these notes are recorded in *Accumulated Other Comprehensive Income (Loss)* until the underlying foreign operations are sold or liquidated.",,
+20261004_1701,q12,risk,True,What does the filing say about foreign exchange or currency risk?,"International was 21% of consolidated revenue in Q2 2026, and results of international stores and AWS are exposed to exchange-rate fluctuations. Exchange rates did not significantly affect Q2 net sales but increased net sales by $3.0 billion for the six months ended June 30, 2026.",,2,True,True,109 108 123 110 147,2,True,foreign exchange currency risk foreign currency fluctuations,True,"Based on Amazon’s (AMZN) **Item 3: Quantitative and Qualitative Disclosures About Market Risk**, the key disclosures regarding foreign exchange (FX) and currency risk are as follows:
+
+---
+
+### **1. Operational & Revenue Exposure**
+* **Revenue Contribution:** Net sales from the **International segment accounted for 21%** of consolidated revenues in Q2 2026.
+* **Functional Currencies:** Revenues and expenses from international stores and AWS are primarily denominated in **Euros (EUR)**, **British Pounds (GBP)**, and **Japanese Yen (JPY)**, as well as Canadian Dollars (CAD) and Mexican Pesos (MXN).
+* **Revenue Impact:** Foreign currency fluctuations caused International segment net sales in Q2 2026 to **decrease by $82 million** year-over-year compared to Q2 2025.
+
+---
+
+### **2. Sensitivity Analysis on Foreign Funds & Intercompany Balances (as of June 30, 2026)**
+
+* **Foreign Funds ($20.4B balance):**
+  * **5% adverse FX shift:** −$1.0 billion decline
+  * **10% adverse FX shift:** −$2.0 billion decline
+  * **20% adverse FX shift:** −$4.1 billion decline
+
+* **Intercompany Balances (Recorded in *Other income (expense), net*):**
+  * **5% adverse FX shift:** −$400 million loss
+  * **10% adverse FX shift:** −$795 million loss
+  * **20% adverse FX shift:** −$1.6 billion loss
+
+---
+
+### **3. Hedging Strategy & Foreign Debt**
+* **Net Investment Hedges:** Amazon has designated **$20.7 billion** of its Euro- and Canadian Dollar-denominated unsecured senior notes as net investment hedges to mitigate translation risks of foreign operations to U.S. dollars.
+* **Accounting Treatment:** Unrealized FX gains and losses on these designated notes are recognized within **Accumulated Other Comprehensive Income (AOCI)** and reclassified to earnings only upon the sale or liquidation of the foreign entities.",,
+20261004_1701,q13,risk,True,"What does the filing say about tariffs, trade restrictions, or other macro headwinds?","Two points. (1) Risk-factor language lists tariff policy changes and trade disputes among macro risks. (2) In Q2 2026 the company received about $640 million of tariff refunds under IEEPA, recorded mainly as a reduction to cost of sales and mostly in North America, described as the significant majority of refunds it expects to receive.",,1,True,True,129 116 126 117 119,1,True,tariffs trade restrictions macroeconomic conditions headwinds | economic conditions macroeconomic headwinds inflation consumer spending,True,"Based on Amazon's (`AMZN`) SEC filings, the company identifies several key risk factors regarding **tariffs, trade restrictions, and macroeconomic headwinds**:
+
+---
+
+### **1. Tariffs and Trade Policy Changes**
+* **Tariff Policy Shifts & Retaliatory Actions:** Amazon highlights risks associated with changes in trade laws and policies in the U.S. and other jurisdictions. Specifically, tariffs proposed or implemented by the U.S. and other nations, along with retaliatory trade actions, could directly impact product costs, demand elasticity, and cross-border commerce.
+* **Inflationary Ripple Effects:** The filing explicitly links potential tariff policy changes to rising inflation and volatile consumer demand, which can increase retail fulfillment and inventory carrying costs.
+
+---
+
+### **2. Trade Restrictions & International Regulatory Hurdles**
+* **Jurisdiction-Specific Restrictions (e.g., China and India):** 
+  * **China (PRC):** Strict regulations and licensing requirements restrict foreign investment and operations in IT infrastructure, data centers, internet content, retail, and delivery. Amazon operates certain cloud/technology services via contractual relationships with licensed third parties.
+  * **India:** Regulations restrict ownership/control by foreign entities engaged in online multi-brand retail. Amazon operates through marketplace and logistics services to third-party sellers with indirect minority interests.
+* **Export/Import & Technology Controls:** Cross-border business licensing/certification requirements for imports, exports, web services, electronic devices, data localization, and technology transfers pose ongoing operational hurdles.
+
+---
+
+### **3. Macroeconomic Headwinds & Inflation**
+* **Consumer Spending & Demand Volatility:** Macroeconomic uncertainty—including recessionary fears and inflation—directly threatens retail demand predictability.
+* **Cost Pressures on Operating Infrastructure:** Amazon notes inflationary pressures across key operational cost buckets:
+  * Transportation and fuel costs
+  * Resources such as energy, land, and water for data centers and logistics
+  * Commodity costs (packaging supplies, hardware products, technology infrastructure)
+  * Tight labor markets increasing payroll and fulfillment expenses.
+
+---
+
+### **4. Geopolitical & Supply Chain Disruptions**
+* **Supply Chain Exposure:** Trade disputes, geopolitical conflicts (including tensions involving China), war, and political instability could disrupt third-party sellers, cross-border supply chains, and international AWS expansion.",,
+20261004_1701,q13,risk,True,"What does the filing say about tariffs, trade restrictions, or other macro headwinds?","Two points. (1) Risk-factor language lists tariff policy changes and trade disputes among macro risks. (2) In Q2 2026 the company received about $640 million of tariff refunds under IEEPA, recorded mainly as a reduction to cost of sales and mostly in North America, described as the significant majority of refunds it expects to receive.",,1,True,True,129 116 126 117 119,2,True,tariffs trade restrictions macroeconomic headwinds foreign trade regulations | macroeconomic conditions inflation interest rates foreign exchange consumer spending,True,"Based on Amazon’s SEC filing disclosures, the company identifies several key risks and headwinds related to trade policy, tariffs, international regulations, and macro conditions:
+
+---
+
+### 1. **Tariffs, Trade Policies & Protectionism**
+* **Tariff & Trade Policy Shifts:** Amazon explicitly flags risks from changing laws and policies of the U.S. and foreign jurisdictions affecting trade, specifically citing **""tariff policy changes,"" foreign investment restrictions, loan constraints, and cross-border taxes**.
+* **Trade & Protectionist Measures:** The company highlights exposure to trade barriers, protectionist legislation, and stringent import/export licensing/certification requirements (particularly across electronic devices, communications, cloud infrastructure, and technologies/components).
+* **Specific Jurisdictional Restrictions:**
+  * **China (PRC):** Strict foreign ownership and licensing limits on internet services, IT infrastructure, data centers, and delivery networks compel Amazon to operate through contractual arrangements with licensed local third parties.
+  * **India:** Regulatory restrictions on foreign ownership/control of multi-brand e-commerce entities limit direct retail operations, requiring marketplace/third-party seller logistics models and minority equity structures.
+
+---
+
+### 2. **Macroeconomic & Consumer Spending Headwinds**
+* **Consumer Demand & Spending Levels:** The filing notes vulnerability to **lower levels of consumer spending** and slower discretionary growth outside the U.S.
+* **Working Capital Pressures:** International macro stress exposes operations to **shorter payable and longer receivable cycles**, which can adversely impact cash flow and liquidity.
+* **Geopolitical Volatility:** Ongoing exposure to geopolitical events, armed conflicts, and regional instability impacting cross-border logistics and operations.
+
+---
+
+### 3. **Foreign Exchange & Interest Rate Exposure**
+* **Foreign Currency Volatility:** With international segments representing ~21% of net sales, top-line growth is sensitive to FX headwinds (principally EUR, GBP, and JPY). 
+  * As of the filing date, Amazon held **$20.4 billion** in foreign-denominated funds (a 10% adverse move represents a **~$2.0 billion** balance sheet impact).
+* **Interest Rate Fluctuations:** While long-term debt is primarily fixed-rate, rising rates negatively impact the fair market values of Amazon's marketable debt securities portfolio.",,
+20261004_1701,q14,risk,True,Are any legal proceedings or contingent liabilities disclosed?,"Yes. Part II, Item 1 describes: Illinois biometric-privacy litigation (Wilcosky v. Amazon.com, Hogan v. Amazon.com); cases filed since March 2020 by private litigants, state Attorneys General, and the FTC alleging, among other things, price-fixing arrangements; two complaints filed by Xockets, Inc. in June 2025 against Amazon.com and AWS; and regular patent and other claims. It states outcomes are inherently unpredictable. Tax disputes (including with the Indian tax authority) are also described in the notes.",3,3,True,True,50 51 47 144 112,1,True,legal proceedings contingent liabilities commitments and contingencies litigation | Note Commitments and Contingencies legal proceedings patent litigation antitrust,False,"Based on Amazon’s latest SEC 10-Q filing (**Note 4 – Commitments and Contingencies**), the company discloses the following legal proceedings, contingencies, and contractual obligations:
+
+---
+
+### **1. Specific Legal Proceedings**
+* **Xockets Patent Litigation (U.S. District Court for the Western District of Texas & USITC):**
+  * **Allegations:** Complaints allege that certain versions of the AWS Nitro System, EC2 P6e-GB200 UltraServers, DGX Cloud with GB200 on AWS, SageMaker HyperPod, and EKS with P6e-GB200 UltraServers infringe multiple U.S. Patent Nos. (11,080,209; 10,649,924; 11,082,350; 10,223,297; 9,378,161; 9,436,640; 10,212,092).
+  * **Remedies Sought:** Unspecified damages, enhanced damages, attorneys' fees, costs, interest, and injunctive relief.
+  * **ITC Investigation:** In June 2026, the U.S. International Trade Commission instituted an investigation following Xockets’ complaint filed against Amazon.com, AWS, Annapurna Labs, NVIDIA, and Microsoft.
+  * **Company Stance:** Amazon disputes the allegations and intends to defend itself vigorously.
+
+---
+
+### **2. General Legal Contingencies & Inquiries**
+* Amazon is regularly subject to claims, government inquiries, regulatory investigations, and litigation across several domains:
+  * Patent & intellectual property disputes
+  * Antitrust and competition matters
+  * Taxes (see also Note 7 – Income Taxes)
+  * Labor, employment, and workplace practices
+  * Privacy, data protection, and consumer protection
+  * Commercial disputes and product liability claims (including third-party seller claims via the A-to-z Guarantee)
+* **Loss Estimations:** Amazon notes that the outcomes are inherently unpredictable. Where an estimate of loss or range of loss is not provided, the company states that an estimate is either not possible or immaterial, or non-monetary remedies cannot be reasonably quantified.
+
+---
+
+### **3. Principal Contractual Commitments & Contingent Obligations (as of June 30, 2026)**
+* **Total Principal Commitments:** **$650.03 billion**, which includes:
+  * **Long-term debt principal & interest:** $220.31B
+  * **Operating & Finance lease liabilities (including interest):** $133.01B
+  * **Leases not yet commenced:** $137.21B (primarily AWS infrastructure/data centers & fulfillment network)
+  * **Unconditional purchase obligations:** $130.07B
+  * **Financing obligations & other commitments:** $29.44B",,
+20261004_1701,q14,risk,True,Are any legal proceedings or contingent liabilities disclosed?,"Yes. Part II, Item 1 describes: Illinois biometric-privacy litigation (Wilcosky v. Amazon.com, Hogan v. Amazon.com); cases filed since March 2020 by private litigants, state Attorneys General, and the FTC alleging, among other things, price-fixing arrangements; two complaints filed by Xockets, Inc. in June 2025 against Amazon.com and AWS; and regular patent and other claims. It states outcomes are inherently unpredictable. Tax disputes (including with the Indian tax authority) are also described in the notes.",3,3,True,True,50 51 47 144 112,2,True,legal proceedings contingencies commitments contingent liabilities litigation,False,"Yes, Amazon discloses legal proceedings and contingent liabilities in its SEC filings:
+
+### 1. Key Specific Legal Proceedings Disclosed
+* **Xockets Patent Litigation (AWS Nitro & AI Infrastructure):**
+  * **U.S. District Court (W.D. Tex.):** Complaints alleging that certain versions of the AWS Nitro System infringe multiple U.S. patents (seeking unspecified damages, enhanced damages, attorney's fees, and injunctive relief).
+  * **U.S. International Trade Commission (ITC):** In May 2026, Xockets filed an ITC complaint against Amazon.com, AWS, Annapurna Labs, NVIDIA, and Microsoft, alleging patent infringement across several cloud and server products (including EC2 P6e-GB200 UltraServers, DGX Cloud with GB200 on AWS, SageMaker HyperPod, and EKS). The ITC instituted an investigation in June 2026. 
+  * Amazon disputes all allegations of wrongdoing and intends to defend vigorously.
+
+### 2. General Regulatory, Tax & Commercial Contingencies
+* Amazon notes regular exposure to investigations, government inquiries, and litigation across several areas:
+  * **Antitrust & Competition**
+  * **Intellectual Property & Patents**
+  * **Taxation** (cross-referenced to Income Tax disclosures)
+  * **Privacy, Data Protection & Consumer Protection**
+  * **Labor & Employment / Commercial Disputes**
+
+### 3. Contingent Liability Accounting & Loss Estimates
+* Amazon notes that outcomes are inherently unpredictable and could materially impact operating results or cash flows for any given period.
+* For matters where no specific loss or range of losses is quantified, Amazon states that an estimate is currently not possible or immaterial, and losses could exceed recorded accruals.",,
+20261004_1701,q15,risk,True,Does the filing mention new accounting standards or changes in accounting policy?,"Yes: in November 2024 the FASB issued an ASU requiring more detailed expense disclosure, effective for annual periods beginning after December 15, 2026 and interim periods within fiscal years beginning after December 15, 2027; the company is evaluating its impact on disclosures. No other pronouncement is listed.",,,False,False,80 79 111 26 65,1,True,new accounting standards adoption accounting policy changes,True,"Yes, the filing discusses new accounting guidance under **Note 1 (Accounting Policies and Supplemental Disclosures)**:
+
+### **New Accounting Standards / Guidance Mentioned**
+* **FASB ASU on Income Statement Disclosures (Expense Disaggregation):**
+  * **Summary:** The FASB issued an Accounting Standards Update (ASU) amending existing income statement disclosure guidance, primarily requiring more detailed disclosure for expenses.
+  * **Effective Date:** Effective for annual reporting periods beginning after **December 15, 2026**, and interim periods within fiscal years beginning after **December 15, 2027**, with early adoption permitted.
+  * **Adoption Method:** Can be applied on either a prospective or retrospective basis.
+  * **Impact:** Amazon is currently evaluating the ASU to determine the impact on its consolidated financial statement disclosures.",,
+20261004_1701,q15,risk,True,Does the filing mention new accounting standards or changes in accounting policy?,"Yes: in November 2024 the FASB issued an ASU requiring more detailed expense disclosure, effective for annual periods beginning after December 15, 2026 and interim periods within fiscal years beginning after December 15, 2027; the company is evaluating its impact on disclosures. No other pronouncement is listed.",,,False,False,80 79 111 26 65,2,True,new accounting standards accounting policy adoption | Accounting Policies and Supplemental Disclosures recently adopted accounting standards,True,"Yes, the filing mentions a new accounting standard update in **Note 1 (Accounting Policies and Supplemental Disclosures)**:
+
+### **Income Statement Disclosure Guidance (FASB ASU)**
+* **Summary:** The FASB issued an Accounting Standards Update (ASU) amending existing income statement disclosure guidance, primarily requiring **more detailed disclosure for expenses**.
+* **Effective Date:** 
+  * Annual reporting periods beginning after **December 15, 2026**.
+  * Interim periods within fiscal years beginning after **December 15, 2027**.
+  * Early adoption is permitted.
+* **Adoption Method:** The amendments can be applied on either a **prospective** or **retrospective** basis.
+* **Current Status / Impact:** Amazon stated that it is **currently evaluating the ASU to determine its impact on its disclosures**.",,
+20261004_1701,q16,unanswerable,False,What is the company's current stock price?,,,,,,18 59 60 61 17,1,False,,,"As of the latest market close on **October 2, 2026**, **Amazon.com, Inc. (AMZN)** closed at **$251.52**.
+
+### Key Technical Snapshot:
+* **Close Price:** $251.52
+* **7-Day Moving Average:** $248.68
+* **60-Day Moving Average:** $254.92
+* **RSI (14):** 48.56 (Neutral)
+* **Latest Signal:** ⚠️ Breakdown (trading below the 60-day MA)",,
+20261004_1701,q16,unanswerable,False,What is the company's current stock price?,,,,,,18 59 60 61 17,2,False,,,"Based on the latest market data for **Amazon.com, Inc. (AMZN)**:
+
+* **Latest Close Price:** **$251.52** (as of October 2, 2026)
+* **7-Day Moving Average (MA 7):** $248.68
+* **60-Day Moving Average (MA 60):** $254.92
+* **RSI (14-Day):** 48.56 (Neutral)
+* **Technical Signal:** ⚠️ Breakdown (trading below the 60-day moving average)",,
+20261004_1701,q17,unanswerable,False,What was the CEO's total compensation for the year?,,,,,,12 59 17 14 60,1,True,CEO executive compensation Andy Jassy salary stock awards,,"Executive compensation details—including the detailed Summary Compensation Table for CEO Andrew R. Jassy—are reported annually in Amazon’s **Definitive Proxy Statement (Schedule 14A)** and Form 10-K, rather than quarterly Form 10-Q filings.
+
+### Key Context on Amazon CEO Compensation Structure:
+* **Base Salary & Routine Comp:** Andy Jassy’s base salary is typically set around **$365,000**. In years without new equity grants, his total annual reported compensation in proxy filings has hovered around **~$1.3 million**, which primarily comprises base salary and business/personal security costs.
+* **Equity Grants:** Amazon’s executive compensation is heavily weighted toward long-term restricted stock units (RSUs) designed to vest over multi-year periods rather than annual equity refresher grants. 
+* **Quarterly Stock-Based Compensation:** In Amazon's Form 10-Q, aggregate company-wide stock-based compensation expense was **$6.53 billion** for the quarter (compared to $6.04 billion in the prior-year period).
+
+*(Note: For the exact full-year audited compensation table for the most recent fiscal year, refer to Amazon's latest Form DEF 14A filed with the SEC).*",,
+20261004_1701,q17,unanswerable,False,What was the CEO's total compensation for the year?,,,,,,12 59 17 14 60,2,True,CEO executive compensation Andy Jassy salary stock awards,,"Executive compensation details are not reported in quarterly **Form 10-Q** filings; rather, they are disclosed annually in Amazon’s **DEF 14A Proxy Statement** and annual **Form 10-K** filings.
+
+### Summary of CEO Andy Jassy's Annual Compensation (from Amazon's Proxy Statements):
+* **Base Salary:** ~$365,000
+* **Other Compensation (Security, 401(k), etc.):** ~$993,000
+* **Stock Awards:** $0 (No new equity grants were awarded in 2022 or 2023, as his 2021 CEO promotion equity grant was designed to vest over a multi-year period through 2031).
+* **Total Annual Compensation (2023):** **~$1.36 million** *(compared to ~$1.30 million in 2022)*.
+
+*(For full breakdown and vesting schedules, refer to the **Executive Compensation / Summary Compensation Table** in Amazon's latest DEF 14A Proxy Statement).*",,
+20261004_1701,q18,unanswerable,False,What is the analyst consensus price target for the stock?,,,,,,60 12 89 18 58,1,False,,,"I do not have access to live sell-side analyst consensus price targets or broker estimate feeds in my current toolset (which includes SEC 10-Q filings and technical indicators for **AMZN**).
+
+However, I can provide:
+1. **SEC 10-Q Filing Analysis** (e.g., segment revenue, AWS growth, capital expenditures, guidance/risks) via `tool_query_sec_filings`.
+2. **Technical Signals & Indicators** (7D/60D moving averages, RSI 14, volume metrics) via `tool_get_technical_signals`.
+
+Let me know if you would like me to pull the latest technical indicators or dive into specific financial metrics from Amazon's recent quarterly filings.",,
+20261004_1701,q18,unanswerable,False,What is the analyst consensus price target for the stock?,,,,,,60 12 89 18 58,2,False,,,"Analyst consensus price targets are sell-side Wall Street estimates and are not reported in SEC filings (10-Q/10-K) or technical signal feeds. 
+
+Currently, direct real-time consensus price target data feeds are not integrated into this environment. However, I can provide:
+- **Technical Indicator Analysis** (e.g., RSI 14, 7-day/60-day moving averages, volume trends) for **AMZN**.
+- **SEC 10-Q Fundamental Analysis** (e.g., segment revenue, AWS growth, CapEx, guidance commentary).
+
+Let me know if you would like to review the technical signals or specific fundamental disclosures for AMZN.",,
+20261004_1701,q19,unanswerable,False,What was revenue in the same quarter two years ago?,,,,,,89 23 14 17 62,1,True,total net sales revenue quarterly comparative | June 30 2024 net sales revenue,,"Based on Amazon's quarterly SEC filing (Three Months Ended June 30, 2026):
+
+* **Current Quarter (Q2 2026) Net Sales:** **$200,606 million** ($200.61B), representing +20% YoY growth.
+* **One Year Prior (Q2 2025) Net Sales:** **$167,702 million** ($167.70B), representing +13% YoY growth.
+* **Two Years Prior (Q2 2024) Net Sales:** Approximately **$147,977 million (~$148.0 billion)** (derived from the reported 13% YoY net sales growth in Q2 2025).
+
+### Segment Breakdown for the Same Quarter (in $ millions):
+| Segment | Q2 2026 | Q2 2025 | Q2 2025 YoY Growth |
+| :--- | :--- | :--- | :--- |
+| **North America** | $116,177 | $100,068 | +11% |
+| **International** | $42,197 | $36,761 | +16% |
+| **AWS** | $42,232 | $30,873 | +17% |
+| **Total Consolidated** | **$200,606** | **$167,702** | **+13%** |",,
+20261004_1701,q19,unanswerable,False,What was revenue in the same quarter two years ago?,,,,,,89 23 14 17 62,2,True,revenue net sales three months ended | 2024 net sales June 30 revenue,,"According to Amazon’s comparative 10-Q filing data for the three months ended **June 30, 2025** (the prior comparative period to Q2 2026), consolidated net sales were **$167,702 million** ($167.70 billion), compared to **$200,606 million** for the three months ended June 30, 2026.
+
+### Segment Breakdown (Three Months Ended June 30, 2025):
+* **North America:** $100,068 million
+* **International:** $36,761 million
+* **AWS:** $30,873 million
+* **Consolidated Net Sales:** **$167,702 million**",,
+20261004_1701,q20,unanswerable,False,What is the main competitor's market share?,,,,,,89 24 90 17 13,1,True,competition market share cloud retail competitors,,"In SEC filings, Amazon (AMZN) notes intense competition across multiple distinct verticals (cloud computing, e-commerce, digital advertising, and logistics) but does not provide third-party competitor market share figures. 
+
+Based on prevailing industry research and market tracking data, here is the breakdown of main competitors and their market share across Amazon's key segments:
+
+---
+
+### 1. Cloud Infrastructure (AWS)
+*Amazon AWS maintains the #1 global market share (~31%).*
+
+* **Microsoft Azure (Primary Competitor):** **~20%** global cloud infrastructure (IaaS/PaaS/Hosted Cloud) market share.
+* **Google Cloud (GCP):** **~12%** global market share.
+* **Others (Alibaba Cloud, Oracle Cloud, etc.):** Remainder (~37%).
+
+---
+
+### 2. U.S. E-Commerce & Retail
+*Amazon commands ~38% of the total U.S. e-commerce market.*
+
+* **Walmart (Primary Retail Competitor):** **~6.5% – 7%** of U.S. e-commerce market share *(while maintaining the #1 overall U.S. retail/grocery revenue share)*.
+* **Shopify (Merchant Ecosystem):** Powers ~**10%** of total U.S. e-commerce gross merchandise value (GMV).
+* **Cross-Border/Discount Competitors (Temu, Shein, TikTok Shop):** Capturing significant incremental share in discretionary fast-fashion/value goods.
+
+---
+
+### 3. Digital Advertising
+*Amazon holds ~12% – 14% of the U.S. digital ad market (primarily high-intent retail media).*
+
+* **Alphabet / Google (Primary Competitor):** **~26%** of global digital advertising.
+* **Meta Platforms:** **~21%** of global digital advertising.",,
+20261004_1701,q20,unanswerable,False,What is the main competitor's market share?,,,,,,89 24 90 17 13,2,True,competition market share cloud ecommerce,,"Amazon (**AMZN**) operates across several key segments where market share dynamics differ substantially:
+
+---
+
+### 1. **Cloud Infrastructure (AWS vs. Azure & GCP)**
+*According to industry market intelligence (Synergy Research / Canalys):*
+* **Amazon Web Services (AWS):** **~31% – 32%** *(Market Leader)*
+* **Microsoft Azure (Main Competitor):** **~24% – 25%**
+* **Google Cloud Platform (GCP):** **~11% – 12%**
+* *Key Takeaway:* Azure is Amazon's primary cloud competitor, steadily closing the gap in enterprise AI workloads and hybrid cloud deployments.
+
+---
+
+### 2. **U.S. E-Commerce (Retail & 3P Marketplace)**
+*According to eMarketer / Insider Intelligence data:*
+* **Amazon:** **~38% – 40%** *(Dominant Leader)*
+* **Walmart (Main Retail Competitor):** **~6% – 7%**
+* **Shopify (Platform GMV equivalent):** **~10%**
+* **Apple / eBay / Target:** **~2% – 3% each**
+* *Key Takeaway:* While Walmart is Amazon's closest standalone retail rival, Amazon retains a ~5x–6x market share advantage in U.S. digital retail.
+
+---
+
+### 3. **Digital Advertising**
+* **Alphabet / Google:** **~26% – 28%** *(Leader)*
+* **Meta (Facebook/Instagram):** **~21% – 22%**
+* **Amazon Advertising:** **~12% – 14%** *(3rd largest, fast-growing)*
+
+---
+
+### **SEC Filing Disclosure Context**
+In its latest 10-Q filings, Amazon notes that it faces intense competition across omnichannel retail, web computing infrastructure, digital advertising, and logistics, with competitors often competing aggressively on pricing, infrastructure expansion, and integrated tech solutions.",,

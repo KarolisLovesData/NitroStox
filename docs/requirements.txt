@@ -1,0 +1,21 @@
+# Web Framework & UI
+streamlit==1.38.0
+
+# Data Manipulation & Math
+pandas==2.2.2
+numpy==1.26.4
+
+# API Clients & Cloud Services
+google-genai==0.3.0
+google-cloud-bigquery==3.20.1
+db-dtypes==1.2.0
+
+# Financial Data & Scraping
+yfinance==0.2.40
+edgartools==2.18.3
+
+# Visualization
+plotly==5.23.0
+
+# Environment Management
+python-dotenv==1.0.1

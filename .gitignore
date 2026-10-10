@@ -1,0 +1,28 @@
+# Environment & Secrets
+.env
+*.env
+
+# Python Virtual Environments
+.venv/
+venv/
+ENV/
+
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# IDE and OS settings
+.vscode/
+.idea/
+.DS_Store
+DBTroubleshooting.py
+sec_chunkTEST.py
+
+# Credentials
+*key*.json
+credentials*.json
+service_account*.json
+
+# Local outputs
+filing_*.txt
+.env.*
