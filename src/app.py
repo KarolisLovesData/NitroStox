@@ -360,7 +360,7 @@ if st.session_state.analyzer_data:
             st.subheader(
                 f"📊 {active_ticker} 6-Month Trend ({direction} {sign}{pct:.1f}%)"
             )
-            fig.update_layout(height=380)
+            fig.update_layout(height=620)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.subheader(f"📊 6-Month {active_ticker} Price Action")

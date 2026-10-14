@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import yfinance as yf
 from sec_rag import SECVectorRAG
+from price_chart import build_price_figure
 import zoneinfo
 
 load_dotenv()
@@ -189,7 +190,7 @@ class StockAnalyzer:
 
         try:
             data = yf.Ticker(self.ticker)
-            df = data.history(period="6mo", interval="1d")
+            df = data.history(period="1y", interval="1d")  # the chart's 1Y button needs a year of history
 
             if df.empty:
                 return False
@@ -219,7 +220,8 @@ class StockAnalyzer:
             print(f"Failed to download and store data for {self.ticker}: {e}")
             return False
 
-    def analyze_moving_averages(self) -> pd.DataFrame:
+    def analyze_moving_averages(self, limit: int | None = 15) -> pd.DataFrame:
+        """Signal table, newest first. limit=None returns the whole stored history (the chart uses that)."""
         try:
             if self.sector in ["Utilities", "Consumer Defensive"]:
                 signal_logic = """
@@ -235,6 +237,7 @@ class StockAnalyzer:
                     WHEN MA_7_day > MA_60_day AND Close >= Local_High_20_day AND Volume > (1.5 * Avg_Vol_20_day) AND RSI_14 < 70 THEN '🚀 HIGH CONVICTION BUY'
                 """
 
+            limit_sql = f"LIMIT {int(limit)}" if limit else ""
             query_str = f"""
                 WITH BaseData AS (
                     SELECT 
@@ -307,7 +310,7 @@ class StockAnalyzer:
                     ROUND(CAST(Avg_Vol_20_day AS NUMERIC), 0) AS Avg_Vol_20
                 FROM RSI_Calc
                 ORDER BY Date DESC
-                LIMIT 15;
+                {limit_sql};
             """
             job_config = bigquery.QueryJobConfig(
                 query_parameters=[
@@ -395,8 +398,14 @@ class StockAnalyzer:
         return div_rate, y_pct, p_pct, self._dividend_history()
 
     def price_movement_plot(self):
+        """Candlestick chart (volume, 7D/60D MA, RSI, signal markers). Layout lives in price_chart.py."""
         try:
-            query_sql = f"SELECT Date, Close FROM {self.table_name} WHERE ticker = @ticker"
+            query_sql = f"""
+                SELECT Date, Open, High, Low, Close, Volume
+                FROM {self.table_name}
+                WHERE ticker = @ticker
+                ORDER BY Date
+            """
             job_config = bigquery.QueryJobConfig(
                 query_parameters=[
                     bigquery.ScalarQueryParameter(
@@ -404,86 +413,15 @@ class StockAnalyzer:
                     )
                 ]
             )
-            df = bq_client.query(query_sql, job_config=job_config).to_dataframe()
-            df["Date"] = pd.to_datetime(df["Date"], utc=True)
-            df = df.sort_values("Date")
-            df["60D_MA"] = df["Close"].rolling(window=60).mean()
+            prices = bq_client.query(query_sql, job_config=job_config).to_dataframe()
 
-            six_months_ago = df["Date"].max() - pd.DateOffset(months=6)
-            df_viz = df[df["Date"] >= six_months_ago].reset_index(drop=True)
+            try:
+                signals = self.analyze_moving_averages(limit=None)  # same SQL as the signal table
+            except Exception as e:
+                print(f"Chart signals unavailable, drawing prices only: {e}")
+                signals = pd.DataFrame()
 
-            if df_viz.empty:
-                return None, None
-
-            start_val = df_viz["Close"].iloc[0]
-            end_val = df_viz["Close"].iloc[-1]
-            perf_pct = ((end_val - start_val) / start_val) * 100
-            min_row = df_viz.loc[df_viz["Close"].idxmin()]
-
-            fig = go.Figure()
-
-            fig.add_trace(
-                go.Scatter(
-                    x=df_viz["Date"],
-                    y=df_viz["Close"],
-                    name="Close Price",
-                    line=dict(color="#006994", width=2),
-                )
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=df_viz["Date"],
-                    y=df_viz["60D_MA"],
-                    name="60D MA",
-                    line=dict(color="#CC5500", width=1.5, dash="dash"),
-                )
-            )
-
-            last_row = df_viz.iloc[-1]
-            fig.add_annotation(
-                x=last_row["Date"],
-                y=last_row["Close"],
-                text="  Close Price",
-                xanchor="left",
-                yanchor="middle",
-                font=dict(color="#006994", size=12),
-                showarrow=False,
-            )
-            if not pd.isna(last_row["60D_MA"]):
-                fig.add_annotation(
-                    x=last_row["Date"],
-                    y=last_row["60D_MA"],
-                    text="  60D MA",
-                    xanchor="left",
-                    yanchor="middle",
-                    font=dict(color="#CC5500", size=12),
-                    showarrow=False,
-                )
-            fig.add_annotation(
-                x=min_row["Date"],
-                y=min_row["Close"],
-                text=f"Period Low: ${min_row['Close']:.2f}",
-                showarrow=True,
-                arrowhead=2,
-                arrowcolor="#87CEEB",
-                ax=0,
-                ay=35,
-                font=dict(color="#87CEEB", size=11),
-                bgcolor="#232B32",
-                bordercolor="#000080",
-            )
-
-            fig.update_layout(
-                paper_bgcolor="#232B32",
-                plot_bgcolor="#232B32",
-                hovermode="x unified",
-                xaxis_title="",
-                yaxis_title="Price ($)",
-                margin=dict(l=20, r=90, t=15, b=20),
-                showlegend=False,
-            )
-
-            return fig, {"perf_pct": perf_pct, "current_price": end_val}
+            return build_price_figure(prices, signals)
         except Exception as e:
             print(f"Error rendering chart elements: {e}")
             return None, None
