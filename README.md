@@ -85,6 +85,8 @@ python run_eval.py                     # retrieval test
 python run_eval.py --agent --runs 2    # also runs the agent (needs GCP credentials)
 ```
 
+With `--agent`, every answer is graded automatically: a number check flags figures that don't appear in what the tools returned, and an LLM judge (`--judge-model`, skip with `--no-judge`) grades correctness, grounding, wrong-period figures and refusals. `eval_trace_<stamp>.jsonl` records each tool call with the chunk ids, scores and text the agent received, and `eval_summary_<stamp>.json` holds the metrics per category. Spot-check the judge against hand grades before trusting it.
+
 ## ⚠️ Limitations & Next Steps
 
 | Limitation | Next step |
