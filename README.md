@@ -28,7 +28,7 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 ## 🏗️ Architecture
 
 <p align="center">
-  <img src="Nitrostox_architecture.png" alt="NitroStox Architecture" width="100%"/>
+  <img src="docs/Nitrostox_architecture.png" alt="NitroStox Architecture" width="100%"/>
 </p>
 
 * **In-warehouse analytics (ELT):** prices are loaded into BigQuery, where chained CTEs and window functions (`LAG`, `AVG`/`MAX`/`SUM OVER`) compute Wilder's RSI, moving averages and Z-scores.
