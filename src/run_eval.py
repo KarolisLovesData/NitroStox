@@ -8,6 +8,11 @@ upgraded_nitrostox.py, filing_AMZN.txt and eval_questions_AMZN.json.
   python run_eval.py --agent             # also ask the agent every question
   python run_eval.py --agent --runs 2    # ask each question twice (answers vary between runs)
   python run_eval.py --agent --no-judge  # skip the LLM judge (number check still runs)
+  python run_eval.py --agent --runs 2 --resume eval_trace_<stamp>.jsonl
+                                         # continue a run that stopped early (quota, Ctrl+C, crash)
+
+If a run stops early, the CSV and summary are still written for the answers finished so far,
+and the trace file has every finished answer. Re-run with --resume to do only the rest.
 
 What it measures
   A. Retrieval: for each answerable question, does the chunk search put a chunk that
@@ -208,6 +213,8 @@ def main():
     ap.add_argument("--agent", action="store_true", help="also run every question through the agent")
     ap.add_argument("--runs", type=int, default=1, help="agent runs per question")
     ap.add_argument("--limit", type=int, default=0, help="only the first N questions (smoke test)")
+    ap.add_argument("--resume", metavar="TRACE_JSONL", default="",
+                    help="continue an earlier --agent run: reuse its finished answers and ask only the rest")
     ap.add_argument("--no-judge", action="store_true", help="skip the LLM judge (number check still runs)")
     ap.add_argument("--judge-model", default="gemini-3.7-flash",
                     help="model for the LLM judge (a stronger model than the agent's reduces self-grading bias)")
@@ -247,6 +254,10 @@ def main():
 
     stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     agent_rows = {}
+    stopped_early = False
+    trace_path = ""
+    if args.resume and not args.agent:
+        raise SystemExit("--resume only makes sense together with --agent")
     if args.agent:
         nx, call_log = setup_agent(args.ticker, text)
         judge_client = None
@@ -255,10 +266,24 @@ def main():
             judge_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
         trace_path = f"eval_trace_{stamp}.jsonl"
-        with open(trace_path, "w", encoding="utf-8") as trace:
+        trace_mode = "w"
+        if args.resume:
+            trace_path, trace_mode = args.resume, "a"
+            m = re.search(r"eval_trace_(\d{8}_\d{4})", os.path.basename(args.resume))
+            stamp = m.group(1) if m else stamp  # keep the original stamp so outputs line up
+            with open(args.resume, encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        rec = json.loads(line)
+                        agent_rows[(rec["id"], rec["run"])] = rec
+            print(f"Resuming: {len(agent_rows)} finished answers loaded from {args.resume}")
+
+        def run_agent_loop(trace):
             for q in questions:
                 snips = all_snippets(q)
                 for run in range(1, args.runs + 1):
+                    if (q["id"], run) in agent_rows:
+                        continue
                     call_log.clear()
                     try:
                         answer = nx.run_gemini_agent(q["question"], active_ticker=args.ticker)
@@ -292,6 +317,7 @@ def main():
                     trace.write(json.dumps({"run_at": stamp, "run": run, "question": q["question"],
                                             "expected_answer": q.get("expected_answer"),
                                             "tool_calls": calls, **row}, ensure_ascii=False) + "\n")
+                    trace.flush()  # a finished answer survives a crash or Ctrl+C
 
                     grade = judge.get("correctness", "judge error") if judge else "-"
                     flag = f" unsupported numbers: {numbers['unsupported_numbers']}" if numbers["unsupported_numbers"] else ""
@@ -299,11 +325,20 @@ def main():
                           f"chunks=[{row['chunk_ids']}] judge={grade}{flag}")
                     time.sleep(1.5)
 
+        with open(trace_path, trace_mode, encoding="utf-8") as trace:
+            try:
+                run_agent_loop(trace)
+            except (KeyboardInterrupt, Exception) as e:
+                stopped_early = True
+                print(f"\nSTOPPED EARLY: {type(e).__name__}: {e}")
+
         summary = summarize(list(agent_rows.values()))
         summary_path = f"eval_summary_{stamp}.json"
         with open(summary_path, "w", encoding="utf-8") as f:
             json.dump({"run_at": stamp, "filing": args.filing, "runs": args.runs,
-                       "judge_model": None if args.no_judge else args.judge_model, **summary}, f, indent=2)
+                       "judge_model": None if args.no_judge else args.judge_model,
+                       "complete": not stopped_early, "answers_finished": len(agent_rows),
+                       "answers_expected": len(questions) * args.runs, **summary}, f, indent=2)
         print("\nAGENT SUMMARY")
         print(json.dumps(summary, indent=2))
         print(f"\nSaved: {trace_path}\nSaved: {summary_path}")
@@ -331,7 +366,9 @@ def main():
             }
             if args.agent:
                 for run in range(1, args.runs + 1):
-                    a = agent_rows[(q["id"], run)]
+                    a = agent_rows.get((q["id"], run))
+                    if a is None:  # run stopped before this answer; resume will fill it in
+                        continue
                     j = a["judge"] or {}
                     w.writerow({**base, "run": run, "agent_tools_called": a["tools"],
                                 "agent_called_sec_tool": a["called"],
@@ -348,6 +385,9 @@ def main():
             else:
                 w.writerow({**base, **{c: "" for c in agent_cols}})
     print(f"\nSaved: {out_path}")
+    if stopped_early:
+        print(f"\nThe run did not finish: {len(agent_rows)} of {len(questions) * args.runs} answers are saved.\n"
+              f"To do only the rest, run:\n  python run_eval.py --agent --runs {args.runs} --resume {trace_path}")
     if not args.agent:
         print("NOTE: this was retrieval only, so the agent_answer columns are empty. "
               "Run again with:  python run_eval.py --agent --runs 2")
