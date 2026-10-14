@@ -54,6 +54,32 @@ from eval_grading import judge_answer, number_check, summarize
 from sec_rag import SECVectorRAG
 
 
+AGENT_ERROR_PREFIXES = ("Gemini Agent execution failed", "[ERROR]")
+MAX_CONSECUTIVE_FAILURES = 3  # stop early rather than burn through every question while Gemini is down
+
+
+def is_agent_error(answer: str) -> bool:
+    """run_gemini_agent returns its exception text as the answer, so errors look like answers."""
+    return (answer or "").startswith(AGENT_ERROR_PREFIXES)
+
+
+def ask_agent(nx, question: str, ticker: str, attempts: int = 4) -> str:
+    """One agent turn, retried with a growing pause when Gemini is overloaded (503) or rate limited (429)."""
+    answer = ""
+    for attempt in range(attempts):
+        try:
+            answer = nx.run_gemini_agent(question, active_ticker=ticker)
+        except Exception as e:
+            answer = f"[ERROR] {e}"
+        if not is_agent_error(answer):
+            return answer
+        if attempt < attempts - 1:
+            wait = 15 * 2 ** attempt
+            print(f"    agent call failed ({answer[:90]}...), retrying in {wait}s")
+            time.sleep(wait)
+    return answer
+
+
 def norm(s: str) -> str:
     """Collapse all whitespace runs. The filing has long runs of spaces inside tables."""
     return re.sub(r"\s+", " ", s or "").strip()
@@ -276,19 +302,30 @@ def main():
                     if line.strip():
                         rec = json.loads(line)
                         agent_rows[(rec["id"], rec["run"])] = rec
-            print(f"Resuming: {len(agent_rows)} finished answers loaded from {args.resume}")
+            # Answers that were API errors, or whose judge call failed, are not finished: redo them
+            bad = [k for k, r in agent_rows.items()
+                   if is_agent_error(r["answer"]) or (not args.no_judge and (r.get("judge") or {}).get("judge_error"))]
+            for k in bad:
+                del agent_rows[k]
+            print(f"Resuming: {len(agent_rows)} finished answers loaded from {args.resume}"
+                  + (f"; {len(bad)} earlier answers had API errors and will be asked again" if bad else ""))
 
         def run_agent_loop(trace):
+            failures = 0
             for q in questions:
                 snips = all_snippets(q)
                 for run in range(1, args.runs + 1):
                     if (q["id"], run) in agent_rows:
                         continue
                     call_log.clear()
-                    try:
-                        answer = nx.run_gemini_agent(q["question"], active_ticker=args.ticker)
-                    except Exception as e:  # keep going; record the failure
-                        answer = f"[ERROR] {e}"
+                    answer = ask_agent(nx, q["question"], args.ticker)
+                    if is_agent_error(answer):
+                        # Not a real answer: do not save it, so --resume asks this question again
+                        failures += 1
+                        print(f"  {q['id']} run {run}: API error, not saved ({answer[:100]})")
+                        if failures >= MAX_CONSECUTIVE_FAILURES:
+                            raise RuntimeError(f"Gemini failed {failures} answers in a row; try again later with --resume")
+                        continue
                     calls = list(call_log)
                     sec_calls = [c for c in calls if c["tool"] == "sec"]
                     tool_text = "\n\n".join(c["output"] for c in calls)
@@ -300,6 +337,13 @@ def main():
                     if judge_client:
                         judge = judge_answer(judge_client, args.judge_model, q, answer, tool_text)
                         time.sleep(1.0)
+                        if "judge_error" in judge:
+                            failures += 1
+                            print(f"  {q['id']} run {run}: judge API error, not saved ({judge['judge_error'][:100]})")
+                            if failures >= MAX_CONSECUTIVE_FAILURES:
+                                raise RuntimeError(f"Gemini failed {failures} calls in a row; try again later with --resume")
+                            continue
+                    failures = 0
 
                     row = {
                         "id": q["id"], "category": q["category"], "answerable": q["answerable"],

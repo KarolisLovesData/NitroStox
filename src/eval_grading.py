@@ -115,7 +115,7 @@ def judge_answer(client, model: str, q: dict, answer: str, tool_output: str,
     )
     config = types.GenerateContentConfig(temperature=0, response_mime_type="application/json")
     last_err = None
-    for attempt in range(3):
+    for attempt in range(4):
         try:
             resp = client.models.generate_content(model=model, contents=[prompt], config=config)
             data = json.loads(resp.text)
@@ -130,7 +130,8 @@ def judge_answer(client, model: str, q: dict, answer: str, tool_output: str,
             }
         except Exception as e:
             last_err = e
-            time.sleep(2 ** attempt)
+            if attempt < 3:
+                time.sleep(5 * 2 ** attempt)  # 5s, 10s, 20s: 503 "high demand" spikes usually pass
     return {"judge_error": str(last_err)}
 
 
