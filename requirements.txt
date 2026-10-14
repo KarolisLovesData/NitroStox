@@ -26,5 +26,8 @@ beautifulsoup4             # HTML to text for the SEC fallback
 # Visualization
 plotly>=5.23
 
+# Evaluation (run_eval.py LLM judge; needs ANTHROPIC_API_KEY in .env)
+anthropic
+
 # Environment Management
 python-dotenv>=1.0
