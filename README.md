@@ -7,6 +7,7 @@
 ![SEC EDGAR](https://img.shields.io/badge/SEC-EDGAR_Data-005B9A.svg)
 ![Gemini AI](https://img.shields.io/badge/AI-Gemini_3.7_Flash-8E75B2.svg?logo=google-gemini&logoColor=white)
 ![ReAct Agent](https://img.shields.io/badge/Agent-ReAct_Tool_Calling-00A86B.svg?logo=google-gemini&logoColor=white)
+![Eval Judge](https://img.shields.io/badge/Eval_Judge-Claude_Sonnet_5.5-D97757.svg?logo=anthropic&logoColor=white)
 
 Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed in **BigQuery SQL**, an AI audit of the latest **SEC 10-Q** grounded in the filing text (RAG), live insider trades, dividend health, and a **ReAct chat agent** that can search the filing and query the warehouse.
 
@@ -63,6 +64,12 @@ Utilities and Consumer Defensive have no volume-backed breakout rule, so their b
 
 One filing (Amazon's 10-Q, quarter ended June 30, 2026), 20 questions: 14 answered in the filing, 6 deliberately not. Each answerable question has an expected answer and an evidence phrase, written before looking at the app's output. The agent answered every question twice, and I graded each answer by hand.
 
+The evaluation script grades answers with an independent judge: Claude Sonnet 5.5 is a different model from the Gemini agent it grades. The judge is implemented, but no Claude-judged results are published yet; the table below is hand-graded.
+
+<p align="center">
+  <img src="docs/Nitrostox_eval_flow.png" alt="NitroStox evaluation flow" width="100%"/>
+</p>
+
 | Measure | Result |
 | :--- | :--- |
 | Retrieval: evidence in the top 5 chunks (14 questions) | Strict **6/14**, lenient **12/14** |
@@ -84,6 +91,8 @@ python save_filing.py                  # saves filing_<TICKER>.txt
 python run_eval.py                     # retrieval test
 python run_eval.py --agent --runs 2    # also runs the agent (needs GCP credentials)
 ```
+
+With `--agent`, every answer is graded automatically: a number check flags figures that don't appear in what the tools returned, and an LLM judge (Claude Sonnet 5.5 by default, so it is not the same model family as the Gemini agent; needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change with `--judge-model`, skip with `--no-judge`) grades correctness, grounding, wrong-period figures and refusals. `eval_trace_<stamp>.jsonl` records each tool call with the chunk ids, scores and text the agent received, and `eval_summary_<stamp>.json` holds the metrics per category. Spot-check the judge against hand grades before trusting it.
 
 ## ⚠️ Limitations & Next Steps
 
