@@ -7,12 +7,59 @@ Two checks per agent answer:
      attributed to the wrong period; the judge covers that.
   2. judge_answer: an LLM grades the answer against expected_answer and the tool output
      (correctness, grounding, period errors, refusal on unanswerable questions).
+     The judge is a Claude model by default (ANTHROPIC_API_KEY), so the model that grades is
+     not the Gemini model that wrote the answer. A Gemini judge is still possible by passing a
+     gemini-* model name.
 """
 import json
 import re
 import time
 
 from google.genai import types
+
+DEFAULT_JUDGE_MODEL = "claude-sonnet-5-5"
+
+
+def make_judge_client(model: str):
+    """Client for the judge model: Anthropic for claude-* names, Gemini otherwise."""
+    if model.startswith("claude"):
+        import os
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            raise SystemExit("The judge model is Claude but ANTHROPIC_API_KEY is not set. Add it to .env, "
+                             "or use --no-judge, or pass --judge-model gemini-3.7-flash.")
+        try:
+            import anthropic
+        except ImportError:
+            raise SystemExit("The judge needs the anthropic package: pip install anthropic")
+        return anthropic.Anthropic(max_retries=4)
+    import os
+    from google import genai
+    return genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+def _parse_json(text: str):
+    """Claude returns the JSON as plain text, sometimes inside a code fence: take the outermost braces."""
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError(f"judge reply had no JSON object: {text[:120]!r}")
+    return json.loads(text[start:end + 1])
+
+
+def _ask_judge(client, model: str, prompt: str) -> dict:
+    if model.startswith("claude"):
+        # No temperature: Sonnet 5.5 rejects non-default sampling values. Thinking stays at its default;
+        # effort "medium" is enough for a rubric grade.
+        resp = client.messages.create(
+            model=model, max_tokens=8000,
+            output_config={"effort": "medium"},
+            messages=[{"role": "user", "content": prompt + "\nReply with the JSON object only."}],
+        )
+        if resp.stop_reason == "refusal":
+            raise RuntimeError(f"judge declined to answer ({getattr(resp.stop_details, 'category', None)})")
+        return _parse_json("".join(b.text for b in resp.content if b.type == "text"))
+    config = types.GenerateContentConfig(temperature=0, response_mime_type="application/json")
+    resp = client.models.generate_content(model=model, contents=[prompt], config=config)
+    return json.loads(resp.text)
 
 # A number, optionally followed by a unit. The lookbehind skips ids like Q2, 10-Q, GB200, Note 4.
 _NUM_RE = re.compile(
@@ -113,12 +160,10 @@ def judge_answer(client, model: str, q: dict, answer: str, tool_output: str,
         tool_output=(tool_output or "(the agent called no tools)")[:max_tool_chars],
         answer=answer,
     )
-    config = types.GenerateContentConfig(temperature=0, response_mime_type="application/json")
     last_err = None
     for attempt in range(4):
         try:
-            resp = client.models.generate_content(model=model, contents=[prompt], config=config)
-            data = json.loads(resp.text)
+            data = _ask_judge(client, model, prompt)
             if isinstance(data, list) and data:
                 data = data[0]
             return {

@@ -23,7 +23,9 @@ What it measures
      and whether the chunks it received contained your snippet. Each answer is then graded:
        - number check: numbers in the answer that do not appear in the tool output
        - LLM judge: correctness vs expected_answer, grounded in the tool output or not,
-         wrong-period figures, and refusal on unanswerable questions
+         wrong-period figures, and refusal on unanswerable questions. The judge is Claude
+         (default claude-sonnet-5-5, needs ANTHROPIC_API_KEY and `pip install anthropic`), a
+         different model family from the Gemini agent it grades.
      The judge is a model too: spot-check some of its grades by hand before trusting them.
 
 Outputs (same timestamp):
@@ -50,7 +52,7 @@ import time
 
 import numpy as np
 
-from eval_grading import judge_answer, number_check, summarize
+from eval_grading import DEFAULT_JUDGE_MODEL, judge_answer, make_judge_client, number_check, summarize
 from sec_rag import SECVectorRAG
 
 
@@ -242,8 +244,9 @@ def main():
     ap.add_argument("--resume", metavar="TRACE_JSONL", default="",
                     help="continue an earlier --agent run: reuse its finished answers and ask only the rest")
     ap.add_argument("--no-judge", action="store_true", help="skip the LLM judge (number check still runs)")
-    ap.add_argument("--judge-model", default="gemini-3.7-flash",
-                    help="model for the LLM judge (a stronger model than the agent's reduces self-grading bias)")
+    ap.add_argument("--judge-model", default=DEFAULT_JUDGE_MODEL,
+                    help="model for the LLM judge. claude-* uses ANTHROPIC_API_KEY; gemini-* uses GEMINI_API_KEY. "
+                         "Default is a Claude model so the judge is not the same model family as the agent.")
     args = ap.parse_args()
 
     mode = f"retrieval + agent ({args.runs} run(s) per question)" if args.agent else "retrieval ONLY (add --agent to also ask the agent)"
@@ -288,8 +291,7 @@ def main():
         nx, call_log = setup_agent(args.ticker, text)
         judge_client = None
         if not args.no_judge:
-            from google import genai
-            judge_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+            judge_client = make_judge_client(args.judge_model)  # fails fast if the key or package is missing
 
         trace_path = f"eval_trace_{stamp}.jsonl"
         trace_mode = "w"
@@ -307,6 +309,23 @@ def main():
                    if is_agent_error(r["answer"]) or (not args.no_judge and (r.get("judge") or {}).get("judge_error"))]
             for k in bad:
                 del agent_rows[k]
+            if judge_client:
+                # Keep one judge for the whole baseline: re-grade (no new agent call) any answer a different judge graded
+                by_id = {q["id"]: q for q in questions}
+                stale = [k for k, r in agent_rows.items() if r.get("judge_model") != args.judge_model and k[0] in by_id]
+                for k in stale:
+                    r = agent_rows[k]
+                    tool_text = "\n\n".join(c["output"] for c in r.get("tool_calls", []))
+                    j = judge_answer(judge_client, args.judge_model, by_id[k[0]], r["answer"], tool_text)
+                    if "judge_error" in j:
+                        del agent_rows[k]  # ask this one again from scratch
+                    else:
+                        r["judge"], r["judge_model"] = j, args.judge_model
+                if stale:
+                    print(f"Re-graded {len(stale)} earlier answers with {args.judge_model} so one judge grades everything")
+            with open(args.resume, "w", encoding="utf-8") as f:  # drop error rows, keep re-graded ones
+                for r in agent_rows.values():
+                    f.write(json.dumps(r, ensure_ascii=False) + "\n")
             print(f"Resuming: {len(agent_rows)} finished answers loaded from {args.resume}"
                   + (f"; {len(bad)} earlier answers had API errors and will be asked again" if bad else ""))
 
@@ -356,6 +375,7 @@ def main():
                         "answer": answer,
                         "number_check": numbers,
                         "judge": judge,
+                        "judge_model": args.judge_model if judge else None,
                     }
                     agent_rows[(q["id"], run)] = row
                     trace.write(json.dumps({"run_at": stamp, "run": run, "question": q["question"],
