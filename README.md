@@ -7,6 +7,7 @@
 ![SEC EDGAR](https://img.shields.io/badge/SEC-EDGAR_Data-005B9A.svg)
 ![Gemini AI](https://img.shields.io/badge/AI-Gemini_3.7_Flash-8E75B2.svg?logo=google-gemini&logoColor=white)
 ![ReAct Agent](https://img.shields.io/badge/Agent-ReAct_Tool_Calling-00A86B.svg?logo=google-gemini&logoColor=white)
+![Eval Judge](https://img.shields.io/badge/Eval_Judge-Claude_Sonnet_5.5-D97757.svg?logo=anthropic&logoColor=white)
 
 Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed in **BigQuery SQL**, an AI audit of the latest **SEC 10-Q** grounded in the filing text (RAG), live insider trades, dividend health, and a **ReAct chat agent** that can search the filing and query the warehouse.
 
@@ -33,6 +34,7 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 * **In-warehouse analytics (ELT):** prices are loaded into BigQuery, where chained CTEs and window functions (`LAG`, `AVG`/`MAX`/`SUM OVER`) compute Wilder's RSI, moving averages and Z-scores.
 * **In-memory vector RAG:** the filing is split into 2,000-character chunks (300 overlap), embedded with `gemini-embedding-001`, and ranked by NumPy cosine similarity. The index is cached per ticker for 24 hours, not stored in BigQuery.
 * **ReAct agent:** Gemini 3.7 Flash calls three Python tools: filing search, BigQuery indicator lookup, and a BigQuery watchlist manager. It remembers the last six messages.
+* **Evaluation with an independent judge:** `run_eval.py` tests retrieval, asks the Gemini agent each question, flags figures missing from the tool output, and has Claude Sonnet 5.5 grade every answer, so the grader is not the model being graded. The judge is implemented but its results are not published yet; the table below is hand-graded.
 * **Parallel ingestion:** `ThreadPoolExecutor` fetches market data, dividends and insider trades concurrently, then runs the dependent BigQuery reads in parallel.
 * **Cost control:** Streamlit caching (1-hour TTL on AI results) and the 24-hour filing cache stop widget clicks from re-querying BigQuery, Yahoo Finance, SEC EDGAR or the LLM.
 
