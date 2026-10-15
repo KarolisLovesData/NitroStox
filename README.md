@@ -62,17 +62,20 @@ Utilities and Consumer Defensive have no volume-backed breakout rule, so their b
 
 ## 🧪 Evaluation
 
-**Setup:** 20 questions on Amazon's Q2 2026 10-Q, each asked twice. 14 are answered in the filing; 6 are not, to test whether the agent admits it doesn't know. Answers were graded by hand against expected answers written in advance.
+I tested the filing Q&A agent on **Amazon's latest 10-Q**: 20 questions, each asked twice, so **40 answers**. 14 questions are answered in the filing; 6 are not, to see if the agent admits it doesn't know. I graded every answer by hand.
 
 <p align="center">
   <img src="docs/Nitrostox_eval_flow.png" alt="NitroStox evaluation flow" width="100%"/>
 </p>
 
-| Test | Result |
-| :--- | :--- |
-| Search returns the right passage (top 5) | **12 of 14** questions |
-| Answers to in-filing questions (28) | **20 correct**, 6 partial, 2 wrong |
-| Answers to out-of-filing questions (12) | **2 refused**, 2 correct from live price data, **8 answered from general knowledge** |
+| Of 40 answers | Count | Example |
+| :--- | :---: | :--- |
+| ✅ Correct | **24** | Revenue $200.6B, up 20% |
+| 🟡 Partly right | **6** | Named only 1 of 3 legal cases |
+| ❌ Wrong | **2** | Quoted last year's net income ($18.2B) as this quarter's ($62.6B) |
+| 🚫 Made up or from outside knowledge | **8** | Gross margin isn't in the filing, and the agent made up 52.3% |
+
+The search step found the right passage for **12 of 14** answerable questions.
 
 **What it found**
 1. **Tables lose their headers when chunked.** The agent reported $18.2B (last year's net income) instead of $62.6B (this quarter's).
