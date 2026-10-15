@@ -60,39 +60,36 @@ Rules run top to bottom in BigQuery SQL; the first match wins. Sector rules come
 Utilities and Consumer Defensive have no volume-backed breakout rule, so their breakouts are labelled WEAK BREAKOUT. Labels such as BUY or SELL are not recommendations.
 </details>
 
-## 🧪 Evaluation (Baseline)
+## 🧪 Evaluation
 
-One filing (Amazon's 10-Q, quarter ended June 30, 2026), 20 questions: 14 answered in the filing, 6 deliberately not. Each answerable question has an expected answer and an evidence phrase, written before looking at the app's output. The agent answered every question twice, and I graded each answer by hand.
-
-The evaluation script grades answers with an independent judge: Claude Sonnet 5.5 is a different model from the Gemini agent it grades. The judge is implemented, but no Claude-judged results are published yet; the table below is hand-graded.
+**Setup:** 20 questions on Amazon's Q2 2026 10-Q, each asked twice. 14 are answered in the filing; 6 are not, to test whether the agent admits it doesn't know. Answers were graded by hand against expected answers written in advance.
 
 <p align="center">
   <img src="docs/Nitrostox_eval_flow.png" alt="NitroStox evaluation flow" width="100%"/>
 </p>
 
-| Measure | Result |
+| Test | Result |
 | :--- | :--- |
-| Retrieval: evidence in the top 5 chunks (14 questions) | Strict **6/14**, lenient **12/14** |
-| Agent answers on answerable questions (28) | **20 correct, 6 partial, 2 wrong** |
-| Out-of-filing questions (10 answers) | **2 refusals**, 8 answered from outside knowledge |
-| Consistency across the two runs | Same grade for every question |
+| Search returns the right passage (top 5) | **12 of 14** questions |
+| Answers to in-filing questions (28) | **20 correct**, 6 partial, 2 wrong |
+| Answers to out-of-filing questions (12) | **2 refused**, 2 correct from live price data, **8 answered from general knowledge** |
 
-**Findings**
-1. **Confident wrong answer from a table:** a chunk started mid-table without column headers, so the agent reported last year's net income ($18.2B) as the current quarter ($62.6B).
-2. **The chat agent isn't restricted to the filing:** only the audit prompt has the answer-only-from-filing rule, so the agent used outside knowledge for CEO pay and market share.
-3. **Partial answers** missed the liquidity statement, the $640M tariff refunds, and two of three litigation matters.
-4. **What worked:** guidance, EPS, cash, segment growth, repurchases and accounting questions.
+**What it found**
+1. **Tables lose their headers when chunked.** The agent reported $18.2B (last year's net income) instead of $62.6B (this quarter's).
+2. **The chat agent isn't told to stick to the filing,** so it answers from general knowledge (CEO pay, market share).
 
-*Caveats:* one filing, 20 questions, two runs and one grader, so the numbers show direction, not precision. The 5-pillar audit, signals and Form 4 features were not evaluated.
+**Next:** keep table headers in each chunk, add a filing-only rule to the agent, re-run.
+
+**How to run**
 
 ```bash
 cd src
-python save_filing.py                  # saves filing_<TICKER>.txt
-python run_eval.py                     # retrieval test
-python run_eval.py --agent --runs 2    # also runs the agent (needs GCP credentials)
+python save_filing.py                  # saves the filing as filing_<TICKER>.txt
+python run_eval.py                     # retrieval test only
+python run_eval.py --agent --runs 2    # also asks the agent every question and grades the answers
 ```
 
-With `--agent`, every answer is graded automatically: a number check flags figures that don't appear in what the tools returned, and an LLM judge (Claude Sonnet 5.5 by default, so it is not the same model family as the Gemini agent; needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change with `--judge-model`, skip with `--no-judge`) grades correctness, grounding, wrong-period figures and refusals. `eval_trace_<stamp>.jsonl` records each tool call with the chunk ids, scores and text the agent received, and `eval_summary_<stamp>.json` holds the metrics per category. Spot-check the judge against hand grades before trusting it.
+With `--agent`, a script flags figures that are not in the retrieved text, and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Judge results are not published yet; the table above is hand-graded. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary.
 
 ## ⚠️ Limitations & Next Steps
 
