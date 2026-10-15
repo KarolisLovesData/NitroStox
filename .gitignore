@@ -17,6 +17,7 @@ __pycache__/
 .DS_Store
 DBTroubleshooting.py
 sec_chunkTEST.py
+check_gemini.py
 
 # Credentials
 *key*.json
@@ -26,3 +27,4 @@ service_account*.json
 # Local outputs
 filing_*.txt
 .env.*
+
