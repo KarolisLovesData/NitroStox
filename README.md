@@ -64,6 +64,10 @@ Utilities and Consumer Defensive have no volume-backed breakout rule, so their b
 
 **Setup:** 20 questions on Amazon's Q2 2026 10-Q, each asked twice. 14 are answered in the filing; 6 are not, to test whether the agent admits it doesn't know. Answers were graded by hand against expected answers written in advance.
 
+<p align="center">
+  <img src="docs/Nitrostox_eval_flow.png" alt="NitroStox evaluation flow" width="100%"/>
+</p>
+
 | Test | Result |
 | :--- | :--- |
 | Search returns the right passage (top 5) | **12 of 14** questions |
@@ -76,21 +80,16 @@ Utilities and Consumer Defensive have no volume-backed breakout rule, so their b
 
 **Next:** keep table headers in each chunk, add a filing-only rule to the agent, re-run.
 
-`run_eval.py` also flags figures not found in the retrieved text and uses **Claude Sonnet 5.5 as an independent judge** of the Gemini agent (results not yet published).
-
-<p align="center">
-  <img src="docs/Nitrostox_eval_flow.png" alt="NitroStox evaluation flow" width="100%"/>
-</p>
-
+**How to run**
 
 ```bash
 cd src
-python save_filing.py                  # saves filing_<TICKER>.txt
-python run_eval.py                     # retrieval test
-python run_eval.py --agent --runs 2    # also runs the agent (needs GCP credentials)
+python save_filing.py                  # saves the filing as filing_<TICKER>.txt
+python run_eval.py                     # retrieval test only
+python run_eval.py --agent --runs 2    # also asks the agent every question and grades the answers
 ```
 
-With `--agent`, every answer is graded automatically: a number check flags figures that don't appear in what the tools returned, and an LLM judge (Claude Sonnet 5.5 by default, so it is not the same model family as the Gemini agent; needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change with `--judge-model`, skip with `--no-judge`) grades correctness, grounding, wrong-period figures and refusals. `eval_trace_<stamp>.jsonl` records each tool call with the chunk ids, scores and text the agent received, and `eval_summary_<stamp>.json` holds the metrics per category. Spot-check the judge against hand grades before trusting it.
+With `--agent`, a script flags figures that are not in the retrieved text, and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Judge results are not published yet; the table above is hand-graded. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary.
 
 ## ⚠️ Limitations & Next Steps
 
