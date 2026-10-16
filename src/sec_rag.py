@@ -8,6 +8,8 @@ from google import genai
 from google.genai import types
 from concurrent.futures import ThreadPoolExecutor
 
+from chunking import chunk_filing_text
+
 load_dotenv()
 
 gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -67,9 +69,20 @@ class SECVectorRAG:
     def __init__(self, ticker: str):
         self.ticker = ticker.upper().strip()
 
+    # "table" keeps each table's caption and column headers (period, year) in every chunk that
+    # holds its rows. "fixed" is the old 2,000-character window, kept so the eval can compare.
+    DEFAULT_STRATEGY = "table"
+
     def chunk_text(
-            self, text_content: str, chunk_size: int = 2000, overlap: int = 300
+            self, text_content: str, chunk_size: int = 2000, overlap: int = 300,
+            strategy: str | None = None,
     ) -> list[str]:
+        if (strategy or self.DEFAULT_STRATEGY) == "fixed":
+            return self._chunk_fixed(text_content, chunk_size, overlap)
+        return chunk_filing_text(text_content, chunk_size, overlap)
+
+    @staticmethod
+    def _chunk_fixed(text_content: str, chunk_size: int, overlap: int) -> list[str]:
         chunks = []
         start = 0
         text_length = len(text_content)

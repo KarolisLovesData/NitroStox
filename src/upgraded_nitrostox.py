@@ -1,5 +1,6 @@
 import os
 import datetime
+import functools
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -12,6 +13,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import yfinance as yf
 from sec_rag import SECVectorRAG
+from grounding import (NOT_IN_FILING, SIGNALS_TAG, check_citations, format_chunks,
+                       parse_tool_sources, repair_request, warning_note)
 from price_chart import build_price_figure
 import zoneinfo
 
@@ -876,6 +879,9 @@ def _analyzer_for(ticker: str) -> "StockAnalyzer":
     return _ANALYZERS.get(t) or StockAnalyzer(t)
 
 
+AGENT_TOP_K = 5  # the 2026-10-04 eval found the evidence in the top 5 far more often than the top 3
+
+
 def tool_query_sec_filings(ticker: str, query: str) -> str:
     """Queries the in-memory vector database for SEC 10-Q filing text chunks matching a specific semantic query.
 
@@ -886,14 +892,14 @@ def tool_query_sec_filings(ticker: str, query: str) -> str:
     """
     try:
         analyzer = _analyzer_for(ticker)
-        results_df = analyzer.search_sec_filings(query, top_k=3)
+        results_df = analyzer.search_sec_filings(query, top_k=AGENT_TOP_K)
         if results_df.empty:
             return (
                 f"No relevant SEC filing chunks found for {ticker} regarding"
                 f" '{query}'."
             )
-        chunks = results_df["chunk_text"].tolist()
-        return "\n\n---\n\n".join(chunks)
+        # Each chunk is labeled "[chunk N]" so the agent can cite it and the app can check the citation
+        return format_chunks(results_df[["chunk_index", "similarity_score", "chunk_text"]].itertuples(index=False))
     except Exception as e:
         return f"Error executing SEC vector search: {e}"
 
@@ -909,7 +915,7 @@ def tool_get_technical_signals(ticker: str) -> str:
         df = analyzer.analyze_moving_averages()
         if df.empty:
             return f"No technical indicators available for {ticker}."
-        return df.to_string(index=False)
+        return f"[{SIGNALS_TAG}]\n" + df.to_string(index=False)
     except Exception as e:
         return f"Error retrieving technical signals: {e}"
 
@@ -951,15 +957,64 @@ def tool_manage_watchlist(ticker: str, action: str) -> str:
         return f"Failed to modify watchlist: {e}"
 
 
-def run_gemini_agent(user_prompt: str, active_ticker: str = "AAPL", history: list | None = None) -> str:
-    """Executes an autonomous ReAct chat agent turn using Gemini 3.7 Flash and tool calling."""
+AGENT_SYSTEM_RULES = f"""Rules for answers:
+1. Answer questions about the company, its results, guidance or risks ONLY from what
+   tool_query_sec_filings returns in this conversation. Always search before answering; search
+   again with other words if the first results do not answer the question.
+2. After every sentence that states a fact or a number, add the tag of the source it comes from:
+   [chunk N] for filing text (N is the number in the chunk's label) or [signals] for the technical
+   signals table. Cite only chunks a tool returned to you. Example: "Net income was $62,647 million
+   for the three months ended June 30, 2026 [chunk 12]."
+3. Copy numbers exactly as the source shows them and name the period of each one. Tables list
+   several periods side by side: read the column headers before picking a value.
+4. Do not calculate figures the filing does not state (margins, growth rates, prior-year values)
+   and do not use outside knowledge about the company, competitors or markets.
+5. If the tools do not contain the answer, say so plainly: "{NOT_IN_FILING}" Do not guess.
+6. Price, moving average, RSI and volume questions use tool_get_technical_signals; cite [signals].
+7. A watchlist action needs no citation: just confirm what the tool did."""
+
+
+def _recording_tools(sources: dict, calls: list) -> list:
+    """Wraps the module-level tools to collect every labeled source a tool returns during this
+    agent turn. The tool names are looked up when called, so run_eval's patched tools still apply."""
+    def record(name, out):
+        calls.append(name)
+        if isinstance(out, str):
+            sources.update(parse_tool_sources(out))
+        return out
+
+    @functools.wraps(tool_query_sec_filings)
+    def sec(ticker: str, query: str) -> str:
+        return record("sec", tool_query_sec_filings(ticker, query))
+
+    @functools.wraps(tool_get_technical_signals)
+    def signals(ticker: str) -> str:
+        return record("technical", tool_get_technical_signals(ticker))
+
+    @functools.wraps(tool_manage_watchlist)
+    def watchlist(ticker: str, action: str) -> str:
+        return record("watchlist", tool_manage_watchlist(ticker, action))
+
+    return [sec, signals, watchlist]
+
+
+def run_gemini_agent_detailed(user_prompt: str, active_ticker: str = "AAPL",
+                              history: list | None = None) -> dict:
+    """One agent turn. Returns {"answer", "sources" ({id: text} the tools returned),
+    "citations" (check_citations result), "rewritten" (True if the agent had to fix its citations)}.
+
+    After the agent answers, its citations are checked against what the tools returned. If a
+    sentence with a number has no citation, cites a chunk it never saw, or quotes a number the
+    cited chunk does not contain, the agent gets one chance to rewrite in the same chat (so it
+    still has the tool results). If the rewrite still fails, a warning is added under the answer.
+    """
     try:
         api_key = os.getenv("GEMINI_API_KEY")
         client = genai.Client(api_key=api_key)
 
         system_instruction = (
-            "You are NitroStox Agent, an autonomous buy-side equity research"
-            " assistant.\n"
+            "You are NitroStox Agent, a buy-side equity research"
+            " assistant that answers from the company's latest SEC filing.\n"
             f"The user's currently selected ticker context is {active_ticker}.\n"
             "You have direct execution access to tools:\n"
             "1. tool_query_sec_filings (In-memory vector search on SEC 10-Q"
@@ -969,17 +1024,16 @@ def run_gemini_agent(user_prompt: str, active_ticker: str = "AAPL", history: lis
             "3. tool_manage_watchlist (Add or remove tickers from BigQuery"
             " watchlist)\n\n"
             "Autonomously call these tools when required to answer user questions."
-            " Be concise, analytical, and professional."
+            " Be concise, analytical, and professional.\n\n"
+            + AGENT_SYSTEM_RULES
         )
 
+        sources: dict = {}
+        calls: list = []
         chat = client.chats.create(
             model="gemini-3.7-flash",
             config={
-                "tools": [
-                    tool_query_sec_filings,
-                    tool_get_technical_signals,
-                    tool_manage_watchlist,
-                ],
+                "tools": _recording_tools(sources, calls),
                 "system_instruction": system_instruction,
             },
         )
@@ -989,14 +1043,31 @@ def run_gemini_agent(user_prompt: str, active_ticker: str = "AAPL", history: lis
             user_prompt = f"Conversation so far:\n{transcript}\n\nNew message: {user_prompt}"
 
         response = chat.send_message(user_prompt)
-        return (
-            response.text
-            if response.text
-            else "Agent completed tool calls without narrative output."
-        )
+        answer = response.text or ""
+        if not answer:
+            return {"answer": "Agent completed tool calls without narrative output.",
+                    "sources": sources, "citations": None, "rewritten": False}
+
+        check = check_citations(answer, sources)
+        rewritten = False
+        if not check["ok"]:
+            retry = chat.send_message(repair_request(check))
+            if retry.text:
+                answer, rewritten = retry.text, True
+                check = check_citations(answer, sources)
+            if not check["ok"]:
+                answer += warning_note(check)
+
+        return {"answer": answer, "sources": sources, "citations": check, "rewritten": rewritten}
 
     except Exception as e:
-        return f"Gemini Agent execution failed: {e}"
+        return {"answer": f"Gemini Agent execution failed: {e}", "sources": {}, "citations": None,
+                "rewritten": False}
+
+
+def run_gemini_agent(user_prompt: str, active_ticker: str = "AAPL", history: list | None = None) -> str:
+    """Executes an autonomous ReAct chat agent turn using Gemini 3.7 Flash and tool calling."""
+    return run_gemini_agent_detailed(user_prompt, active_ticker, history)["answer"]
 
 
 if __name__ == "__main__":
