@@ -82,7 +82,7 @@ The search step found the right passage for **12 of 14** answerable questions.
 1. **Tables lose their headers when chunked.** The agent reported $18.2B (last year's net income) instead of $62.6B (this quarter's).
 2. **The chat agent isn't told to stick to the filing,** so it answers from general knowledge (CEO pay, market share).
 
-**Since then:** table chunks keep their headers, and the agent must cite the filing for every fact (see Architecture). These results are from before that change; the next run will show whether it worked.
+**What I changed because of it:** the results showed the year mix-up came from how the filing was chunked, so I rebuilt the chunking: each table chunk now repeats its title and column headers. I also made the agent cite the filing chunk behind every fact, and the app checks those citations. The table above is from before these changes; the next run will show how much they help.
 
 **How to run**
 
