@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from concurrent.futures import ThreadPoolExecutor
+from chunking import chunk_filing_text
 
 load_dotenv()
 
@@ -70,18 +71,7 @@ class SECVectorRAG:
     def chunk_text(
             self, text_content: str, chunk_size: int = 2000, overlap: int = 300
     ) -> list[str]:
-        chunks = []
-        start = 0
-        text_length = len(text_content)
-
-        while start < text_length:
-            end = start + chunk_size
-            chunk = text_content[start:end]
-            if chunk.strip():
-                chunks.append(chunk.strip())
-            start += chunk_size - overlap
-
-        return chunks
+        return chunk_filing_text(text_content, chunk_size, overlap)
 
     def generate_embedding(self, input_text: str) -> list[float]:
         """Embeds one string (used for search queries). Returns [] on failure."""
