@@ -352,6 +352,12 @@ def chunk_filing_text(text: str, chunk_size: int = 2000, overlap: int = 300) -> 
 _MD_ROW_RE = re.compile(r"^\s*\|.*\|\s*$")
 _MD_SEP_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$")
 _MD_HEADING_RE = re.compile(r"^\s*(#{1,6})\s+(.*?)\s*#*\s*$")
+_MD_TAG_RE = re.compile(r"^\s*<u>.*</u>\s*$", re.I)  # page-navigation lines such as "Table of Contents"
+
+
+def _md_plain(text: str) -> str:
+    """Drops Markdown noise from prose and captions: **bold**, backslash escapes, extra spaces."""
+    return re.sub(r"\s+", " ", re.sub(r"\\(.)", r"\1", text.replace("**", ""))).strip()
 
 
 def looks_like_markdown(text: str) -> bool:
@@ -392,19 +398,27 @@ def chunk_markdown(text: str, chunk_size: int = 2000, overlap: int = 300) -> lis
 
     i, n = 0, len(lines)
     para: list[str] = []
-    pending: list[str] = []  # last paragraph, held back in case it is the title of a table below it
+    pending: list[str] = []  # the last short paragraphs: they may be the title of a table below them
 
     def add_pending():
-        for p in pending:
-            for piece in _split_prose(p, chunk_size - len(label()) - 2):
+        for p_ in pending:
+            for piece in _split_prose(p_, chunk_size - len(label()) - 2):
                 add(piece)
         pending.clear()
 
     def flush_para():
         if para:
-            add_pending()
-            pending.append(" ".join(l.strip() for l in para))
+            text_ = _md_plain(" ".join(l.strip() for l in para))
             para.clear()
+            if not text_:
+                return
+            if len(text_) > 250:  # a real paragraph, not a title
+                add_pending()
+            elif len(pending) >= 4:
+                first = pending.pop(0)
+                for piece in _split_prose(first, chunk_size - len(label()) - 2):
+                    add(piece)
+            pending.append(text_)
 
     while i < n:
         line = lines[i]
@@ -412,7 +426,9 @@ def chunk_markdown(text: str, chunk_size: int = 2000, overlap: int = 300) -> lis
         if h:
             flush_para()
             add_pending()
-            level, title = len(h.group(1)), h.group(2).strip("* ")
+            level, title = len(h.group(1)), _md_plain(h.group(2))
+            if re.match(r"PART\s+[IVX]+\b", title, re.I):
+                level = 1  # a filing's PART starts a new top level, whatever "#" depth the converter used
             heads[:] = heads[:level - 1] + [title[:100]]
             i += 1
             continue
@@ -427,10 +443,12 @@ def chunk_markdown(text: str, chunk_size: int = 2000, overlap: int = 300) -> lis
             while k < len(rows) and (_MD_SEP_RE.match(rows[k]) or not _has_data(rows[k])):
                 k += 1
             header, body = rows[:k], rows[k:]
-            caption = pending.pop() if pending and len(pending[-1]) <= 250 else ""
+            caption_lines = pending[-4:]
+            del pending[-4:]
             add_pending()
-            head_text = "\n".join(([caption] if caption else []) + header)
+            head_text = "\n".join(caption_lines + header)
             budget = max(chunk_size - len(label()) - len(head_text) - 30, chunk_size // 3)
+            flush()  # every table starts its own chunk, so two statements are never mixed
             part: list[str] = []
             first = True
             for r in body + [None]:
@@ -443,6 +461,8 @@ def chunk_markdown(text: str, chunk_size: int = 2000, overlap: int = 300) -> lis
                     part.append(r)
             continue
         if not line.strip():
+            flush_para()
+        elif _MD_TAG_RE.match(line):
             flush_para()
         else:
             para.append(line)
