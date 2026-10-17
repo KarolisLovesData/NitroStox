@@ -12,10 +12,15 @@ the SEC asks for); no Gemini key is used.
 """
 import argparse
 import os
+import re
 
 from dotenv import load_dotenv
 
 from chunking import chunk_filing_text, looks_like_markdown
+
+
+NUM_ROW_RE = re.compile(r"\d[\d,.]*\)?%?\s*\|?\s*$")  # a line that ends in a number
+PERIOD_RE = re.compile(r"(months|weeks|year|quarter)s? ended|as of", re.I)
 
 
 def fixed_chunks(text: str, size: int = 2000, overlap: int = 300) -> list[str]:
@@ -59,12 +64,13 @@ def main():
 
     new = chunk_filing_text(text)
     old = fixed_chunks(text)
-    tables = [c for c in new if "\n|" in c or c.split("\n", 1)[-1].startswith("|")]
-    with_period = [c for c in tables if any(w in c.lower() for w in ("months ended", "year ended", "as of"))]
     print(f"\nFormat: {'Markdown' if looks_like_markdown(text) else 'plain text'}")
     print(f"Old chunker: {len(old)} chunks | New chunker: {len(new)} chunks, longest {max(map(len, new)):,} chars")
-    print(f"Table chunks: {len(tables)}, of which {len(with_period)} show a period header (e.g. 'Months Ended')")
-
+    for name, chunks in (("Old", old), ("New", new)):
+        nums = [c for c in chunks if sum(bool(NUM_ROW_RE.search(l)) for l in c.splitlines()) >= 3]
+        ok = [c for c in nums if PERIOD_RE.search(c)]
+        print(f"{name}: {len(nums)} chunks hold rows of numbers, {len(ok)} of them show a period header "
+              f"({len(nums) - len(ok)} do not)")
     for name, chunks in (("NEW", new), ("OLD", old)):
         hits = [c for c in chunks if args.find.lower() in c.lower()]
         print(f"\n===== {name}: {len(hits)} chunks contain '{args.find}' (showing {min(args.show, len(hits))}) =====")
