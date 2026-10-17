@@ -223,7 +223,13 @@ def _split_prose(text: str, limit: int) -> list[str]:
 
 
 def chunk_filing_text(text: str, chunk_size: int = 2000, overlap: int = 300) -> list[str]:
-    """Paragraph- and table-aware chunks, each prefixed with its section."""
+    """Paragraph- and table-aware chunks, each prefixed with its section.
+
+    Markdown input (filing.markdown()) goes to the simpler chunk_markdown(); plain text falls
+    back to the layout-guessing chunker below.
+    """
+    if looks_like_markdown(text):
+        return chunk_markdown(text, chunk_size, overlap)
     section, subsection = "", ""
     chunks: list[str] = []
     cur: list[str] = []
@@ -300,4 +306,113 @@ def chunk_filing_text(text: str, chunk_size: int = 2000, overlap: int = 300) -> 
                 parts.append("\n".join(rows).strip("\n"))
                 add("\n".join(parts), is_table=True)
     flush(carry=False)
+    return chunks
+
+
+# ---------- Markdown filings (the simpler path) ----------
+# edgartools' filing.markdown() writes tables as "| a | b |" rows and headings as "#" lines, so
+# nothing has to be guessed: a table is a run of lines starting with "|", and its header is the
+# rows above the first row with a real number in it.
+
+_MD_ROW_RE = re.compile(r"^\s*\|.*\|\s*$")
+_MD_SEP_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$")
+_MD_HEADING_RE = re.compile(r"^\s*(#{1,6})\s+(.*?)\s*#*\s*$")
+
+
+def looks_like_markdown(text: str) -> bool:
+    """True when the text has Markdown tables (a header separator row like |---|---|)."""
+    return any(_MD_SEP_RE.match(l) and "|" in l for l in text.splitlines())
+
+
+def chunk_markdown(text: str, chunk_size: int = 2000, overlap: int = 300) -> list[str]:
+    """Chunks a Markdown filing: whole tables with their header rows, paragraphs, section prefix."""
+    lines = text.replace("\r\n", "\n").split("\n")
+    heads: list[str] = []        # current heading path, e.g. ["Item 2. MD&A", "Net Sales"]
+    chunks: list[str] = []
+    cur: list[str] = []          # pieces of the chunk being built
+    cur_label = ""
+
+    def label() -> str:
+        return f"[Section: {' > '.join(heads[-2:])}]" if heads else ""
+
+    def flush():
+        nonlocal cur
+        if cur:
+            body = "\n\n".join(cur)
+            chunks.append(f"{cur_label}\n{body}" if cur_label else body)
+        cur = []
+
+    def add(piece: str, keep_tail: bool = True):
+        nonlocal cur_label
+        lab = label()
+        size = len(lab) + sum(len(p) + 2 for p in cur) + len(piece)
+        if cur and (size > chunk_size or lab != cur_label):
+            tail = cur[-1] if keep_tail and lab == cur_label and len(cur[-1]) <= overlap \
+                and not cur[-1].startswith("|") else None
+            flush()
+            if tail and len(lab) + len(tail) + len(piece) + 4 <= chunk_size:
+                cur.append(tail)
+        cur_label = lab
+        cur.append(piece)
+
+    i, n = 0, len(lines)
+    para: list[str] = []
+    pending: list[str] = []  # last paragraph, held back in case it is the title of a table below it
+
+    def add_pending():
+        for p in pending:
+            for piece in _split_prose(p, chunk_size - len(label()) - 2):
+                add(piece)
+        pending.clear()
+
+    def flush_para():
+        if para:
+            add_pending()
+            pending.append(" ".join(l.strip() for l in para))
+            para.clear()
+
+    while i < n:
+        line = lines[i]
+        h = _MD_HEADING_RE.match(line)
+        if h:
+            flush_para()
+            add_pending()
+            level, title = len(h.group(1)), h.group(2).strip("* ")
+            heads[:] = heads[:level - 1] + [title[:100]]
+            i += 1
+            continue
+        if _MD_ROW_RE.match(line):
+            flush_para()
+            rows = []
+            while i < n and _MD_ROW_RE.match(lines[i]):
+                rows.append(lines[i].rstrip())
+                i += 1
+            # Header = rows before the first one with a real number (years and dates don't count)
+            k = 0
+            while k < len(rows) and (_MD_SEP_RE.match(rows[k]) or not _has_data(rows[k])):
+                k += 1
+            header, body = rows[:k], rows[k:]
+            caption = pending.pop() if pending and len(pending[-1]) <= 250 else ""
+            add_pending()
+            head_text = "\n".join(([caption] if caption else []) + header)
+            budget = max(chunk_size - len(label()) - len(head_text) - 30, chunk_size // 3)
+            part: list[str] = []
+            first = True
+            for r in body + [None]:
+                if r is None or (part and sum(len(x) + 1 for x in part) + len(r) > budget):
+                    if part or first:
+                        add("\n".join(([head_text] if head_text else [])
+                                      + ([] if first else ["(table continued)"]) + part), keep_tail=False)
+                    part, first = [], False
+                if r is not None:
+                    part.append(r)
+            continue
+        if not line.strip():
+            flush_para()
+        else:
+            para.append(line)
+        i += 1
+    flush_para()
+    add_pending()
+    flush()
     return chunks

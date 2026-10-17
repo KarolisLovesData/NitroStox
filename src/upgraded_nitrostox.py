@@ -496,7 +496,16 @@ class StockAnalyzer:
             doc_text = ""
             try:
                 latest_filing = filings.head(1)[0]
-                doc_text = latest_filing.text()
+                # Markdown keeps tables as "| a | b |" rows with their header row, which the
+                # chunker can split cleanly. Plain text is the fallback for older edgartools.
+                doc_text = ""
+                if hasattr(latest_filing, "markdown"):
+                    try:
+                        doc_text = latest_filing.markdown() or ""
+                    except Exception as md_err:
+                        print(f"⚠️ edgar markdown() failed ({md_err}); using plain text.")
+                if not doc_text:
+                    doc_text = latest_filing.text()
             except Exception as primary_err:
                 print(f"⚠️ edgar could not read the filing text ({type(primary_err).__name__}: "
                       f"{primary_err}). Falling back to a direct SEC download...")
