@@ -112,6 +112,14 @@ def _is_heading(par: str) -> bool:
     return long_words > 0 and caps / long_words >= 0.8
 
 
+_RULE_RE = re.compile(r"^[\s" + re.escape(_BOX_CHARS) + r"\-_=]+$")
+
+
+def _is_rule(line: str) -> bool:
+    """A separator line made only of dashes or box characters, e.g. the line under a table header."""
+    return bool(line.strip()) and bool(_RULE_RE.match(line))
+
+
 def _blocks(text: str) -> list[dict]:
     """Splits text into {'kind': 'prose'|'table', ...} blocks in document order."""
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
@@ -137,22 +145,29 @@ def _blocks(text: str) -> list[dict]:
                         break
                     j += 1
                     continue
-                # A short label row ("Operating expenses:") sits right against the rows; a heading
-                # after a blank line ("Net Sales") ends the table instead.
-                label_row = len(l.strip()) < 70 and (l.rstrip().endswith(":") or (
-                    lines[j - 1].strip() and j + 1 < n and is_table_line(lines[j + 1])))
+                if _is_rule(l):  # the line under the column headers, or between sections of a table
+                    j += 1
+                    continue
+                # A label row ("Operating activities:", "Adjustments to reconcile ...:") sits right
+                # against the rows and has no figures; a heading after a blank line ("Net Sales")
+                # ends the table instead.
+                label_row = (not _has_data(l) and len(l.strip()) <= 200
+                             and (lines[j - 1].strip() or l.rstrip().endswith(":"))
+                             and _table_follows(lines, j, look=2))
                 if is_table_line(l) or is_header_line(l) or label_row:
                     last_table = j
                     j += 1
                     continue
                 break
-            rows = lines[start:last_table + 1]
-            # Caption: short lines just above the table that are not prose ("CONSOLIDATED STATEMENTS
-            # OF OPERATIONS", "(in millions, except per share data)", "(unaudited)").
+            rows = [r.rstrip() for r in lines[start:last_table + 1] if not _is_rule(r)]
+            # Caption: the short lines just above the table that are not headings or prose
+            # ("AMAZON.COM, INC.", "(in millions, except per share data)", "(unaudited)"). They are
+            # often separated by blank lines, so take up to 4 of the preceding blocks.
             flush_para()
             caption = []
-            if blocks and blocks[-1]["kind"] == "prose" and _caption_like(blocks[-1]["text"]):
-                caption = [l.strip() for l in blocks.pop()["text"].splitlines() if l.strip()]
+            while (blocks and len(caption) < 4 and blocks[-1]["kind"] == "prose"
+                   and _caption_like(blocks[-1]["text"]) and not _SECTION_RE.match(blocks[-1]["text"].strip())):
+                caption = [l.strip() for l in blocks.pop()["text"].splitlines() if l.strip()] + caption
             if sum(1 for r in rows if _has_data(r)) >= 1:
                 blocks.append({"kind": "table", "caption": caption, "rows": rows})
             else:  # header-looking lines with no data: keep as text
@@ -258,7 +273,7 @@ def chunk_filing_text(text: str, chunk_size: int = 2000, overlap: int = 300) -> 
     def add(piece: str, is_table: bool = False):
         nonlocal cur_len, cur_label, last_was_table
         lab = label()
-        budget = chunk_size - len(lab) - 1
+        budget = (table_limit if is_table else chunk_size) - len(lab) - 1
         if cur and (cur_len + len(piece) + 2 > budget or (cur_label is not None and lab != cur_label)):
             flush(carry=not is_table and lab == cur_label)
             if cur and cur_len + len(piece) + 2 > budget:  # no room for the overlap paragraph
@@ -270,25 +285,34 @@ def chunk_filing_text(text: str, chunk_size: int = 2000, overlap: int = 300) -> 
         cur_len += len(piece) + 2
         last_was_table = is_table
 
+    table_limit = int(chunk_size * 1.75)  # wide statements: a header can take a third of a chunk
+    prev_head, prose_gap = "", 99  # header of the last table, and how many prose blocks came since
     for b in _blocks(text):
         if b["kind"] == "prose":
             par = b["text"].strip()
             if _is_heading(par):
+                prev_head = ""
                 head = par.strip()
                 if _SECTION_RE.match(head):
                     section, subsection = head[:100], ""
                 else:
                     subsection = head[:100]
                 continue
+            prose_gap += 1
             budget = chunk_size - len(label()) - 1
             for piece in _split_prose(par, budget):
                 add(piece)
             continue
 
         caption = "\n".join(b["caption"])
-        for header, body in _split_table(b["rows"]):
+        for g, (header, body) in enumerate(_split_table(b["rows"])):
             head_text = "\n".join(x for x in [caption, "\n".join(header)] if x).strip("\n")
-            budget = chunk_size - len(label()) - 1 - len(head_text) - 30
+            if not header and not caption and prev_head and prose_gap <= 2 and g == 0:
+                head_text = prev_head  # same table, interrupted by a line of text or a page break
+            elif header:
+                prev_head = head_text
+            prose_gap = 0
+            budget = table_limit - len(label()) - 1 - len(head_text) - 30
             budget = max(budget, chunk_size // 3)  # a huge header still leaves room for rows
             pieces, cur_rows, size = [], [], 0
             for r in body:

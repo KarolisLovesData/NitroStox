@@ -50,6 +50,8 @@ def main():
     ap.add_argument("--file", default="", help="chunk this saved file instead of downloading")
     ap.add_argument("--find", default="Net income", help="show the chunks that contain this text")
     ap.add_argument("--show", type=int, default=2, help="how many matching chunks to print")
+    ap.add_argument("--missing", type=int, default=0,
+                    help="print the first N new chunks that hold numbers but show no period header")
     args = ap.parse_args()
 
     if args.file:
@@ -71,6 +73,14 @@ def main():
         ok = [c for c in nums if PERIOD_RE.search(c)]
         print(f"{name}: {len(nums)} chunks hold rows of numbers, {len(ok)} of them show a period header "
               f"({len(nums) - len(ok)} do not)")
+    if args.missing:
+        bad = [c for c in new if sum(bool(NUM_ROW_RE.search(l)) for l in c.splitlines()) >= 3
+               and not PERIOD_RE.search(c)]
+        print(f"\n===== NEW chunks with numbers but no period header ({len(bad)}); first {args.missing} =====")
+        for c in bad[:args.missing]:
+            print(re.sub(r"[ \t]{3,}", "  ~  ", c)[:700])  # long runs of spaces shortened to fit the screen
+            print("-" * 60)
+
     for name, chunks in (("NEW", new), ("OLD", old)):
         hits = [c for c in chunks if args.find.lower() in c.lower()]
         print(f"\n===== {name}: {len(hits)} chunks contain '{args.find}' (showing {min(args.show, len(hits))}) =====")
