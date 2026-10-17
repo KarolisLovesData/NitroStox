@@ -32,8 +32,9 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 </p>
 
 * **In-warehouse analytics (ELT):** prices are loaded into BigQuery, where chained CTEs and window functions (`LAG`, `AVG`/`MAX`/`SUM OVER`) compute Wilder's RSI, moving averages and Z-scores.
-* **In-memory vector RAG:** the filing is split into 2,000-character chunks (300 overlap), embedded with `gemini-embedding-001`, and ranked by NumPy cosine similarity. The index is cached per ticker for 24 hours, not stored in BigQuery.
+* **In-memory vector RAG:** the filing is split into chunks of up to 2,000 characters by paragraph and table. Every table chunk repeats the table's title and column headers (for example "Three Months Ended June 30, 2025 / 2026"), and every chunk starts with its section name. Chunks are embedded with `gemini-embedding-001`, and ranked by NumPy cosine similarity. The index is cached per ticker for 24 hours, not stored in BigQuery.
 * **ReAct agent:** Gemini 3.7 Flash calls three Python tools: filing search, BigQuery indicator lookup, and a BigQuery watchlist manager. It remembers the last six messages.
+* **Cited answers:** the agent must tag every fact with the chunk it came from, like `[chunk 12]`, and say "The filing doesn't say" when the search finds nothing. The app checks each answer in code: cited chunks must be ones the search returned, every number needs a citation, and the number must appear in the cited chunk. If a check fails, the agent rewrites once; if it still fails, the answer shows a warning. The chat shows the cited text under each answer.
 * **Parallel ingestion:** `ThreadPoolExecutor` fetches market data, dividends and insider trades concurrently, then runs the dependent BigQuery reads in parallel.
 * **Cost control:** Streamlit caching (1-hour TTL on AI results) and the 24-hour filing cache stop widget clicks from re-querying BigQuery, Yahoo Finance, SEC EDGAR or the LLM.
 
@@ -90,16 +91,17 @@ cd src
 python save_filing.py                  # saves the filing as filing_<TICKER>.txt
 python run_eval.py                     # retrieval test only
 python run_eval.py --agent --runs 2    # also asks the agent every question and grades the answers
+python run_eval.py --chunker fixed     # the old fixed-size chunks, to compare retrieval
 ```
 
-With `--agent`, a script flags figures that are not in the retrieved text, and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Judge results are not published yet; the table above is hand-graded. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary.
+With `--agent`, a script flags figures that are not in the retrieved text and checks the citations (valid, present, and pointing at a chunk that holds the figure and the evidence), and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Judge results are not published yet; the table above is hand-graded. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary.
 
 ## ⚠️ Limitations & Next Steps
 
 | Limitation | Next step |
 | :--- | :--- |
-| Chat agent can answer from outside knowledge | Restrict filing questions to retrieved text |
-| Fixed-size chunks cut tables and sections | Keep column headers with table chunks; chunk by section |
+| Citation checks catch numbers, not wording | Have the judge score every cited sentence |
+| Table text can lose empty cells, which shifts columns | Read tables from the filing HTML |
 | Refusals are prompt-enforced; search has no similarity cutoff | Add a code-level relevance threshold |
 | Only the latest filing, in memory, one ticker at a time | Persist vectors if the corpus grows |
 | AI errors are cached for an hour; saved results aren't de-duplicated | Skip caching errors; upsert results per ticker |
