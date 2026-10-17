@@ -138,10 +138,13 @@ def _blocks(text: str) -> list[dict]:
             start = i
             j = i
             last_table = i
+            seen_data = False
             while j < n:
                 l = lines[j]
+                if is_table_line(l) and _has_data(l):
+                    seen_data = True
                 if not l.strip():
-                    if j + 1 < n and not lines[j + 1].strip():
+                    if j + 1 < n and not lines[j + 1].strip() and seen_data:
                         break
                     j += 1
                     continue
@@ -151,9 +154,17 @@ def _blocks(text: str) -> list[dict]:
                 # A label row ("Operating activities:", "Adjustments to reconcile ...:") sits right
                 # against the rows and has no figures; a heading after a blank line ("Net Sales")
                 # ends the table instead.
+                # After a blank line it must not end in a full stop (a sentence) and must not be followed
+                # by new column headers (then it titles the next table, e.g. "Net Sales").
+                nxt = next((x for x in lines[j + 1:j + 6] if x.strip()), "")
                 label_row = (not _has_data(l) and len(l.strip()) <= 200
-                             and (lines[j - 1].strip() or l.rstrip().endswith(":"))
+                             and (lines[j - 1].strip() or l.rstrip().endswith(":")
+                                  or (not l.rstrip().endswith(".") and not is_header_line(nxt)))
                              and _table_follows(lines, j, look=2))
+                # Before the first row of figures, "ASSETS" or "Current assets:" may sit after a blank
+                # line under the column headers; they still belong to the table.
+                if not label_row and not seen_data:
+                    label_row = (not _has_data(l) and len(l.strip()) <= 80 and _table_follows(lines, j, look=3))
                 if is_table_line(l) or is_header_line(l) or label_row:
                     last_table = j
                     j += 1

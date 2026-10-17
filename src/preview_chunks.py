@@ -20,7 +20,7 @@ from chunking import chunk_filing_text, looks_like_markdown
 
 
 NUM_ROW_RE = re.compile(r"\d[\d,.]*\)?%?\s*\|?\s*$")  # a line that ends in a number
-PERIOD_RE = re.compile(r"(months|weeks|year|quarter)s? ended|as of", re.I)
+PERIOD_RE = re.compile(r"(months|weeks|year|quarter)s? ended|as of|(december|june|march|september) \d{1,2},", re.I)
 
 
 def fixed_chunks(text: str, size: int = 2000, overlap: int = 300) -> list[str]:
