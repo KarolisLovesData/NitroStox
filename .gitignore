@@ -28,3 +28,9 @@ service_account*.json
 filing_*.txt
 .env.*
 
+
+# Eval outputs and saved filings
+eval_results_*.csv
+eval_summary_*.json
+eval_trace_*.jsonl
+filing_*.md
