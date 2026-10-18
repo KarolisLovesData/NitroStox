@@ -25,10 +25,6 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 * **Dividend profile:** yield, payout ratio and history; payout above 100% is flagged as high risk.
 * **Agent chat:** ask questions in plain English; the agent picks a tool, reads the result and answers.
 
-<p align="center">
-  <img src="docs/ReAct%20Agent%20In%20USE.gif" alt="ReAct agent answering questions from the 10-Q" width="100%"/>
-</p>
-
 One request, three tools: the agent searched PLTR's 10-Q for cost risks, read its RSI from BigQuery, and, because both conditions held, wrote PLTR into the watchlist table (left sidebar).
 
 <p align="center">
