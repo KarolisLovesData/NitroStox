@@ -28,7 +28,7 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 > **One request, three tools.** The agent searched PLTR's 10-Q for cost risks, read its RSI from BigQuery, and, because both conditions were met, added PLTR to the watchlist table (left sidebar). I checked every point in this answer against the 10-Q and BigQuery: the quotes, the RSI and the watchlist entry are all correct.
 
 <p align="center">
-  <img src="docs/agent_watchlist_demo.png" alt="Agent checks PLTR's 10-Q and RSI, then adds PLTR to the watchlist" width="100%"/>
+  <img src="docs/agent_watchlist_demo_arrow.png" alt="Agent checks PLTR's 10-Q and RSI, then adds PLTR to the watchlist" width="100%"/>
 </p>
 
 ## 🏗️ Architecture
