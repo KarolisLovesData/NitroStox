@@ -12,7 +12,6 @@
 Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed in **BigQuery SQL**, an AI audit of the latest **SEC 10-Q** grounded in the filing text (RAG), live insider trades, dividend health, and a **ReAct chat agent** that can search the filing and query the warehouse.
 
 ![NitroStox App Demo](docs/App_IN_USE.gif)
-
 > [!WARNING]
 > **Not investment advice.** An educational portfolio project. Signals and AI summaries are for information only, data may be delayed or wrong, and AI output can contain errors. See the [full disclaimer](#disclaimer).
 
@@ -24,10 +23,6 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 * **Sentiment:** a BULLISH / BEARISH / NEUTRAL read from price, volume, news, insider trades and dividends.
 * **Dividend profile:** yield, payout ratio and history; payout above 100% is flagged as high risk.
 * **Agent chat:** ask questions in plain English; the agent picks a tool, reads the result and answers.
-
-<p align="center">
-  <img src="docs/ReAct%20Agent%20In%20USE.gif" alt="ReAct agent answering questions from the 10-Q" width="100%"/>
-</p>
 
 One request, three tools: the agent searched PLTR's 10-Q for cost risks, read its RSI from BigQuery, and, because both conditions held, wrote PLTR into the watchlist table (left sidebar).
 
