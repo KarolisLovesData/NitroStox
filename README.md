@@ -25,6 +25,10 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 * **Dividend profile:** yield, payout ratio and history; payout above 100% is flagged as high risk.
 * **Agent chat:** ask questions in plain English; the agent picks a tool, reads the result and answers.
 
+<p align="center">
+  <img src="docs/ReAct%20Agent%20In%20USE.gif" alt="ReAct agent answering questions from the 10-Q" width="100%"/>
+</p>
+
 ## 🏗️ Architecture
 
 <p align="center">
@@ -32,7 +36,7 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 </p>
 
 * **In-warehouse analytics (ELT):** prices are loaded into BigQuery, where chained CTEs and window functions (`LAG`, `AVG`/`MAX`/`SUM OVER`) compute Wilder's RSI, moving averages and Z-scores.
-* **In-memory vector RAG:** the filing is split into 2,000-character chunks (300 overlap), embedded with `gemini-embedding-001`, and ranked by NumPy cosine similarity. The index is cached per ticker for 24 hours, not stored in BigQuery.
+* **In-memory vector RAG:** the filing is downloaded as Markdown and split by paragraph and table (up to 2,000 characters, 300 overlap). Every chunk starts with its section name, and every table chunk repeats the table's caption and column headers, so a row never loses its period. Chunks are embedded with `gemini-embedding-001`, and ranked by NumPy cosine similarity. The index is cached per ticker for 24 hours, not stored in BigQuery.
 * **ReAct agent:** Gemini 3.7 Flash calls three Python tools: filing search, BigQuery indicator lookup, and a BigQuery watchlist manager. It remembers the last six messages.
 * **Parallel ingestion:** `ThreadPoolExecutor` fetches market data, dividends and insider trades concurrently, then runs the dependent BigQuery reads in parallel.
 * **Cost control:** Streamlit caching (1-hour TTL on AI results) and the 24-hour filing cache stop widget clicks from re-querying BigQuery, Yahoo Finance, SEC EDGAR or the LLM.
@@ -81,15 +85,17 @@ The search step found the right passage for **12 of 14** answerable questions.
 1. **Tables lose their headers when chunked.** The agent reported $18.2B (last year's net income) instead of $62.6B (this quarter's).
 2. **The chat agent isn't told to stick to the filing,** so it answers from general knowledge (CEO pay, market share).
 
-**What I'm changing because of it:** the results showed the year mix-up came from how the filing was chunked, so I'm rebuilding the chunking so each table chunk keeps its title and column headers. I'm also making the agent cite the filing chunk behind every fact, with a code check on those citations. Both changes are being tested now; the table above is from before them, and I'll publish the new results when the re-run is done.
+**What I changed because of it:** the year mix-up came from how the filing was chunked, so I rebuilt the chunking ([`chunking.py`](src/chunking.py)): the filing is now read as Markdown, and each table chunk keeps its title and column headers. In spot checks after the change, the agent gave this quarter's net income ($62.6B vs $18.2B a year earlier) and for gross margin it showed its working: net sales minus cost of sales, 52.3% vs 51.8% a year earlier. Every figure matched the filing. In the baseline the same 52.3% came with no source, which is why it was graded as made up. The table above is from before the change; I'll publish the full re-run when it's done.
+
+**Still to do:** make the agent cite the filing chunk behind every fact, with a code check on those citations.
 
 **How to run**
 
 ```bash
 cd src
-python save_filing.py                  # saves the filing as filing_<TICKER>.txt
-python run_eval.py                     # retrieval test only
-python run_eval.py --agent --runs 2    # also asks the agent every question and grades the answers
+python preview_chunks.py                                   # saves the latest 10-Q as filing_<TICKER>.md and previews its chunks
+python run_eval.py --filing filing_AMZN.md                 # retrieval test only
+python run_eval.py --filing filing_AMZN.md --agent --runs 2  # also asks the agent every question and grades the answers
 ```
 
 With `--agent`, a script flags figures that are not in the retrieved text, and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Judge results are not published yet; the table above is hand-graded. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary.
@@ -99,7 +105,7 @@ With `--agent`, a script flags figures that are not in the retrieved text, and *
 | Limitation | Next step |
 | :--- | :--- |
 | Chat agent can answer from outside knowledge | Restrict filing questions to retrieved text |
-| Fixed-size chunks cut tables and sections | Keep column headers with table chunks; chunk by section |
+| In Markdown tables a `$` sign gets its own cell, so some rows are shifted against the headers | Merge `$` cells before chunking |
 | Refusals are prompt-enforced; search has no similarity cutoff | Add a code-level relevance threshold |
 | Only the latest filing, in memory, one ticker at a time | Persist vectors if the corpus grows |
 | AI errors are cached for an hour; saved results aren't de-duplicated | Skip caching errors; upsert results per ticker |
