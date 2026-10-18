@@ -87,7 +87,7 @@ The search step found the right passage for **12 of 14** answerable questions.
 1. **Tables lose their headers when chunked.** The agent reported $18.2B (last year's net income) instead of $62.6B (this quarter's).
 2. **The chat agent isn't told to stick to the filing,** so it answers from general knowledge (CEO pay, market share).
 
-**What I changed because of it:** the year mix-up came from how the filing was chunked, so I rebuilt the chunking ([`chunking.py`](src/chunking.py)): the filing is now read as Markdown, and each table chunk keeps its title and column headers. In spot checks after the change, the agent gave this quarter's net income ($62.6B vs $18.2B a year earlier) and for gross margin it showed its working: net sales minus cost of sales, 52.3% vs 51.8% a year earlier. Every figure matched the filing. In the baseline the same 52.3% came with no source, which is why it was graded as made up. The table above is from before the change; I'll publish the full re-run when it's done.
+**What I changed because of it:** I rebuilt the chunking ([`chunking.py`](src/chunking.py)) so the filing is read as Markdown and every table chunk keeps its title and column headers. In spot checks since, the agent gives this quarter's net income ($62.6B, not last year's $18.2B) and shows how it gets gross margin (52.3% vs 51.8%); every figure matches the filing. The table above is from before the change; the full re-run is still to come.
 
 **Still to do:** make the agent cite the filing chunk behind every fact, with a code check on those citations.
 
