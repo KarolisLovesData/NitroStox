@@ -29,6 +29,12 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
   <img src="docs/ReAct%20Agent%20In%20USE.gif" alt="ReAct agent answering questions from the 10-Q" width="100%"/>
 </p>
 
+One request, three tools: the agent searched PLTR's 10-Q for cost risks, read its RSI from BigQuery, and, because both conditions held, wrote PLTR into the watchlist table (left sidebar).
+
+<p align="center">
+  <img src="docs/agent_watchlist_demo.png" alt="Agent checks PLTR's 10-Q and RSI, then adds PLTR to the watchlist" width="100%"/>
+</p>
+
 ## 🏗️ Architecture
 
 <p align="center">

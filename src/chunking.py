@@ -305,9 +305,9 @@ def chunk_filing_text(text: str, chunk_size: int = 2000, overlap: int = 300) -> 
                 prev_head = ""
                 head = par.strip()
                 if _SECTION_RE.match(head):
-                    section, subsection = head[:100], ""
+                    section, subsection = head[:160], ""
                 else:
-                    subsection = head[:100]
+                    subsection = head[:160]
                 continue
             prose_gap += 1
             budget = chunk_size - len(label()) - 1
@@ -429,7 +429,7 @@ def chunk_markdown(text: str, chunk_size: int = 2000, overlap: int = 300) -> lis
             level, title = len(h.group(1)), _md_plain(h.group(2))
             if re.match(r"PART\s+[IVX]+\b", title, re.I):
                 level = 1  # a filing's PART starts a new top level, whatever "#" depth the converter used
-            heads[:] = heads[:level - 1] + [title[:100]]
+            heads[:] = heads[:level - 1] + [title[:160]]
             i += 1
             continue
         if _MD_ROW_RE.match(line):

@@ -976,7 +976,15 @@ def run_gemini_agent(user_prompt: str, active_ticker: str = "AAPL", history: lis
             "3. tool_manage_watchlist (Add or remove tickers from BigQuery"
             " watchlist)\n\n"
             "Autonomously call these tools when required to answer user questions."
-            " Be concise, analytical, and professional."
+            " Be concise, analytical, and professional.\n\n"
+            "Answer format (Markdown):\n"
+            "- Start with a one-line bold verdict, e.g. **Added PLTR to the watchlist.**\n"
+            "- Then at most 4 bullets, each on its own line starting with '- ',"
+            " one fact per bullet, under 25 words.\n"
+            "- Quote the filing in at most one short phrase per bullet.\n"
+            "- Name the source briefly in parentheses, e.g. (10-Q, MD&A) or"
+            " (BigQuery RSI). Never paste the full chunk section label.\n"
+            "- No headings, no tables, no '•' characters."
         )
 
         chat = client.chats.create(
