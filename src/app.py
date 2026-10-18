@@ -50,16 +50,16 @@ def agent_panel(active_ticker):
     history = st.session_state.setdefault("agent_history", [])
     for msg in history:
         with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+            st.markdown(msg["content"].replace("$", r"\$"))  # $ would render as LaTeX
 
     prompt = st.chat_input("e.g. What are NVDA's cost risks? If high, add to watchlist.")
     if prompt:
         with st.chat_message("user"):
-            st.markdown(prompt)
+            st.markdown(prompt.replace("$", r"\$"))
         with st.chat_message("assistant"):
             with st.spinner("🤖 Agent planning & executing tool calls..."):
                 reply = run_gemini_agent(prompt, active_ticker=active_ticker, history=history)
-            st.markdown(reply)
+            st.markdown(reply.replace("$", r"\$"))
         history.extend([
             {"role": "user", "content": prompt},
             {"role": "assistant", "content": reply},
