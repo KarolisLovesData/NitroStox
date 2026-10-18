@@ -24,7 +24,6 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 * **Dividend profile:** yield, payout ratio and history; payout above 100% is flagged as high risk.
 * **Agent chat:** ask questions in plain English; the agent picks a tool, reads the result and answers.
 
-> [!NOTE]
 > **One request, three tools.** The agent searched PLTR's 10-Q for cost risks, read its RSI from BigQuery, and, because both conditions were met, added PLTR to the watchlist table (left sidebar). I checked every point in this answer against the 10-Q and BigQuery: the quotes, the RSI and the watchlist entry are all correct.
 
 <p align="center">
