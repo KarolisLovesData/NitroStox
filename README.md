@@ -168,10 +168,12 @@ streamlit run app.py           # dashboard
 gcloud builds submit --tag gcr.io/$GCP_PROJECT_ID/nitrostox-app
 gcloud run deploy nitrostox-app \
   --image gcr.io/$GCP_PROJECT_ID/nitrostox-app \
-  --platform managed --region us-central1 --allow-unauthenticated \
+  --platform managed --region us-central1 --no-allow-unauthenticated --max-instances 1 \
   --set-env-vars GCP_PROJECT_ID=$GCP_PROJECT_ID,BQ_DATASET=$BQ_DATASET,SEC_IDENTITY=$SEC_IDENTITY \
   --set-secrets GEMINI_API_KEY=gemini-api-key:latest
 ```
+
+The service is private on purpose: every chat message calls the Gemini API, so a public link would let anyone run up the bill. To open it yourself, run `gcloud run services proxy nitrostox-app --region us-central1` and visit http://localhost:8080. To let a specific person in, grant them the Cloud Run Invoker role on the service.
 </details>
 
 ## Disclaimer
