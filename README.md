@@ -93,7 +93,16 @@ The search step found the right passage for **27 of 28** answers to answerable q
 
 **What I changed because of it**
 - I rebuilt the chunking ([`chunking.py`](src/chunking.py)) so every table chunk keeps its title and column headers. Net income is now right in both runs, and no answer in the re-test is wrong.
-- I added keyword search next to the vector search ([`keyword_search.py`](src/keyword_search.py)). On this test it scored about the same as vector search alone (18 vs 17 fully correct answers), so it stays on as a safeguard for exact figures and years.
+- I added keyword search next to the vector search, so the search is now **hybrid** ([`keyword_search.py`](src/keyword_search.py)). I ran the same test with each method:
+
+| Same 40 answers | Vector search only | Hybrid search |
+| :--- | :---: | :---: |
+| Fully correct (of 28 answerable) | 17 | **18** |
+| Wrong | 0 | 0 |
+| Said "not in the filing" when it should (of 12) | 6 | **7** |
+| Right passage found by the search (of 28) | 26 | **27** |
+
+  The difference is one answer, so hybrid matches vector on this test. It stays on as the default because it is safer for exact figures and years, and `NITROSTOX_SEARCH_MODE=vector` switches it off.
 
 The first test was graded by hand and this one by Claude, so their counts are not directly comparable.
 
