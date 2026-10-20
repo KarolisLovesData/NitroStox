@@ -15,7 +15,6 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
   <img src="docs/App_in_use.gif" alt="Agent checks PLTR's 10-Q and RSI, then adds PLTR to the watchlist" width="100%"/>
 </p>
 
-![NitroStox App Demo](docs/App_IN_USE.gif)
 > [!WARNING]
 > **Not investment advice.** An educational portfolio project. Signals and AI summaries are for information only, data may be delayed or wrong, and AI output can contain errors. See the [full disclaimer](#disclaimer).
 
