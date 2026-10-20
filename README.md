@@ -28,10 +28,14 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 * **Dividend profile:** yield, payout ratio and history; payout above 100% is flagged as high risk.
 * **Agent chat:** ask questions in plain English; the agent picks a tool, reads the result and answers.
 
-> **One request, three tools.** The agent searched PLTR's 10-Q for cost risks, read its RSI from BigQuery, and, because both conditions were met, added PLTR to the watchlist table (left sidebar). I checked every point in this answer against the 10-Q and BigQuery: the quotes, the RSI and the watchlist entry are all correct.
+> **One request, three tools, every fact cited.** I asked the agent to check AMZN's tariff refunds in the 10-Q and its RSI, and to add AMZN to my watchlist if RSI is below 70.
+> 1. It searched the 10-Q and found the tariff refunds, each fact tagged with the passage it came from (`[chunk 21]`).
+> 2. It read the RSI from BigQuery (`[signals]`).
+> 3. Because RSI was below 70, it added AMZN to the watchlist (left sidebar).
+> 4. The **Sources** box shows the exact filing text behind each tag.
 
 <p align="center">
-  <img src="docs/agent_watchlist_demo_arrow.png" alt="Agent checks PLTR's 10-Q and RSI, then adds PLTR to the watchlist" width="100%"/>
+  <img src="docs/agent_watchlist_demo_numbered.png" alt="Agent checks AMZN's 10-Q and RSI, adds AMZN to the watchlist, and cites its sources" width="100%"/>
 </p>
 
 ## 🏗️ Architecture
