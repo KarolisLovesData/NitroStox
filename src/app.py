@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 try:
-    from upgraded_nitrostox import SECDataUnavailable, StockAnalyzer, run_gemini_agent
+    from upgraded_nitrostox import SECDataUnavailable, StockAnalyzer, run_gemini_agent_detailed
 except Exception as e:
     st.error(f"Backend Startup Failure: {e}")
     st.warning("Please check your database connectivity parameters.")
@@ -44,6 +44,17 @@ def rag_search_panel(analyzer):
             st.warning("No semantic matches found in the vector database for this query.")
 
 
+def show_sources(sources):
+    """The filing text behind each [chunk N] the answer cites, so a reader can check it."""
+    if not sources:
+        return
+    with st.expander(f"Sources ({len(sources)})"):
+        for key, text in sources.items():
+            label = "Technical signals" if key == "signals" else f"Chunk {key}"
+            st.markdown(f"**{label}**")
+            st.text(text[:3000])
+
+
 @st.fragment
 def agent_panel(active_ticker):
     """Chat history survives reruns; the agent also sees the last few turns."""
@@ -51,6 +62,7 @@ def agent_panel(active_ticker):
     for msg in history:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"].replace("$", r"\$"))  # $ would render as LaTeX
+            show_sources(msg.get("sources"))
 
     prompt = st.chat_input("e.g. What are NVDA's cost risks? If high, add to watchlist.")
     if prompt:
@@ -58,11 +70,15 @@ def agent_panel(active_ticker):
             st.markdown(prompt.replace("$", r"\$"))
         with st.chat_message("assistant"):
             with st.spinner("🤖 Agent planning & executing tool calls..."):
-                reply = run_gemini_agent(prompt, active_ticker=active_ticker, history=history)
+                result = run_gemini_agent_detailed(prompt, active_ticker=active_ticker, history=history)
+            reply = result["answer"]
+            cited = {k: result["sources"][k] for k in (result["citations"] or {}).get("cited", [])
+                     if k in result["sources"]}
             st.markdown(reply.replace("$", r"\$"))
+            show_sources(cited)
         history.extend([
             {"role": "user", "content": prompt},
-            {"role": "assistant", "content": reply},
+            {"role": "assistant", "content": reply, "sources": cited},
         ])
         # The agent may have changed the watchlist: refresh the sidebar
         st.session_state.watchlist_refresh += 1

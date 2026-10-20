@@ -43,6 +43,7 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 * **In-warehouse analytics (ELT):** prices are loaded into BigQuery, where chained CTEs and window functions (`LAG`, `AVG`/`MAX`/`SUM OVER`) compute Wilder's RSI, moving averages and Z-scores.
 * **In-memory hybrid RAG:** the filing is downloaded as Markdown and split by paragraph and table (up to 2,000 characters, 300 overlap). Every chunk starts with its section name, and every table chunk repeats the table's caption and column headers, so a row never loses its period. Each question is searched two ways: by meaning (`gemini-embedding-001` embeddings, ranked by NumPy cosine similarity) and by exact words (a small BM25 keyword search, so figures, years and line items like "net income" are matched literally). The two result lists are merged with Reciprocal Rank Fusion. Set `NITROSTOX_SEARCH_MODE` to `vector` or `keyword` to use one method alone. The index is cached per ticker for 24 hours, not stored in BigQuery.
 * **ReAct agent:** Gemini 3.7 Flash calls three Python tools: filing search, BigQuery indicator lookup, and a BigQuery watchlist manager. It remembers the last six messages.
+* **Cited answers:** the agent must tag every fact with the chunk it came from, like `[chunk 12]`, and say "The filing doesn't say" when the search finds nothing. The app checks each answer in code: cited chunks must be ones the search returned, every number needs a citation, and the number must appear in the cited chunk. If a check fails, the agent rewrites once; if it still fails, the answer shows a warning. The chat shows the cited text under each answer.
 * **Parallel ingestion:** `ThreadPoolExecutor` fetches market data, dividends and insider trades concurrently, then runs the dependent BigQuery reads in parallel.
 * **Cost control:** Streamlit caching (1-hour TTL on AI results) and the 24-hour filing cache stop widget clicks from re-querying BigQuery, Yahoo Finance, SEC EDGAR or the LLM.
 
@@ -110,13 +111,13 @@ python run_eval.py --filing filing_AMZN.md --agent --runs 2 --search vector  # s
 
 The default search is hybrid. To compare search methods, add `--search vector`, `--search hybrid` or `--search keyword`; `--search all` runs the retrieval test for all three side by side.
 
-With `--agent`, a script flags figures that are not in the retrieved text, and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
+With `--agent`, a script flags figures that are not in the retrieved text and checks the citations (valid, present, and pointing at a chunk that holds the figure), and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
 
 ## ⚠️ Limitations & Next Steps
 
 | Limitation | Next step |
 | :--- | :--- |
-| Chat agent can answer from outside knowledge | Restrict filing questions to retrieved text |
+| Citation checks catch numbers, not wording | Have the judge score every cited sentence |
 | In Markdown tables a `$` sign gets its own cell, so some rows are shifted against the headers | Merge `$` cells before chunking |
 | Refusals are prompt-enforced; search has no similarity cutoff | Add a code-level relevance threshold |
 | Only the latest filing, in memory, one ticker at a time | Persist vectors if the corpus grows |
