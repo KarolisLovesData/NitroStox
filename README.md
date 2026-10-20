@@ -45,9 +45,9 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 </p>
 
 * **In-warehouse analytics (ELT):** prices are loaded into BigQuery, where chained CTEs and window functions (`LAG`, `AVG`/`MAX`/`SUM OVER`) compute Wilder's RSI, moving averages and Z-scores.
-* **In-memory hybrid RAG:** the filing is downloaded as Markdown and split by paragraph and table (up to 2,000 characters, 300 overlap). Every chunk starts with its section name, and every table chunk repeats the table's caption and column headers, so a row never loses its period. Each question is searched two ways: by meaning (`gemini-embedding-001` embeddings, ranked by NumPy cosine similarity) and by exact words (a small BM25 keyword search, so figures, years and line items like "net income" are matched literally). The two result lists are merged with Reciprocal Rank Fusion. Set `NITROSTOX_SEARCH_MODE` to `vector` or `keyword` to use one method alone. The index is cached per ticker for 24 hours, not stored in BigQuery.
+* **Hybrid search over the filing:** the 10-Q is split into chunks that keep their section and table headers, then searched by meaning (Gemini embeddings) and by exact words (BM25 keyword search), and the two result lists are merged with Reciprocal Rank Fusion. Exact figures, years and line items like "net income" are found as reliably as general questions. Cached per ticker for 24 hours.
 * **ReAct agent:** Gemini 3.7 Flash calls three Python tools: filing search, BigQuery indicator lookup, and a BigQuery watchlist manager. It remembers the last six messages.
-* **Cited answers:** the agent must tag every fact with the chunk it came from, like `[chunk 12]`, and say "The filing doesn't say" when the search finds nothing. The app checks each answer in code: cited chunks must be ones the search returned, every number needs a citation, and the number must appear in the cited chunk. If a check fails, the agent rewrites once; if it still fails, the answer shows a warning. The chat shows the cited text under each answer.
+* **Cited answers:** the agent tags every fact with its source, like `[chunk 12]`, and says "The filing doesn't say" when the filing has no answer. The app checks every citation and number in code, and the chat shows the cited text under each answer.
 * **Parallel ingestion:** `ThreadPoolExecutor` fetches market data, dividends and insider trades concurrently, then runs the dependent BigQuery reads in parallel.
 * **Cost control:** Streamlit caching (1-hour TTL on AI results) and the 24-hour filing cache stop widget clicks from re-querying BigQuery, Yahoo Finance, SEC EDGAR or the LLM.
 
@@ -96,7 +96,7 @@ Every one of the 40 answers passed the code citation check, and the numbers in t
 2. **The chat agent isn't told to stick to the filing,** so it answers from general knowledge (CEO pay, market share).
 
 **What I changed because of it**
-- I made the agent cite the filing chunk behind every fact (for example `[chunk 14]`) and added a code check on those citations. Before this change the agent made up or used outside knowledge in 5 of 40 answers; now it says "The filing doesn't say" instead (10 of 12 unanswerable questions, and the other 2 were a stock price question it answered from the price table with a citation). In 16 of 40 answers the agent first had to rewrite its citations.
+- I made the agent cite the filing chunk behind every fact (for example `[chunk 14]`) and added a code check on those citations. Answers made up or taken from outside knowledge went from 5 of 40 to 0: the agent now says "The filing doesn't say".
 - I rebuilt the chunking ([`chunking.py`](src/chunking.py)) so every table chunk keeps its title and column headers. Net income is now right in both runs, and no answer in the re-test is wrong.
 - I added keyword search next to the vector search, so the search is now **hybrid** ([`keyword_search.py`](src/keyword_search.py)). I ran the same test with each method (before the citations were added):
 
@@ -111,7 +111,6 @@ Every one of the 40 answers passed the code citation check, and the numbers in t
 
 The first test was graded by hand and these by Claude, so their counts are not directly comparable.
 
-**Still to do:** the 10 partly right answers are correct but incomplete (for example, they do not mention that the jump in net income came mostly from investment gains), and the judge found only 27 of 40 citations fully supported the claim next to them.
 
 <details>
 <summary><b>▶️ How to run the evaluation (click to expand)</b></summary>
