@@ -109,7 +109,8 @@ The first test was graded by hand and these by Claude, so their counts are not d
 
 **Still to do:** the 10 partly right answers are correct but incomplete (for example, they do not mention that the jump in net income came mostly from investment gains), and the judge found only 27 of 40 citations fully supported the claim next to them.
 
-**How to run**
+<details>
+<summary><b>▶️ How to run the evaluation (click to expand)</b></summary>
 
 ```bash
 cd src
@@ -122,6 +123,7 @@ python run_eval.py --filing filing_AMZN.md --agent --runs 2 --search vector  # s
 The default search is hybrid. To compare search methods, add `--search vector`, `--search hybrid` or `--search keyword`; `--search all` runs the retrieval test for all three side by side.
 
 With `--agent`, a script flags figures that are not in the retrieved text and checks the citations (valid, present, and pointing at a chunk that holds the figure), and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
+</details>
 
 <details>
 <summary><b>📖 Glossary for beginners (click to expand)</b></summary>
