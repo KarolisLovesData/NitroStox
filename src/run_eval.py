@@ -8,7 +8,10 @@ upgraded_nitrostox.py, filing_AMZN.txt and eval_questions_AMZN.json.
   python run_eval.py --agent             # also ask the agent every question
   python run_eval.py --agent --runs 2    # ask each question twice (answers vary between runs)
   python run_eval.py --agent --no-judge  # skip the LLM judge (number check still runs)
-  python run_eval.py --agent --runs 2 --resume eval_trace_<stamp>.jsonl
+  python run_eval.py --search all        # retrieval for vector, hybrid and keyword search side by side
+  python run_eval.py --agent --runs 2 --search vector   # agent with vector-only search
+  python run_eval.py --agent --runs 2 --search hybrid   # agent with hybrid (keyword + vector) search
+  python run_eval.py --agent --runs 2 --resume eval_trace_<stamp>_<mode>.jsonl
                                          # continue a run that stopped early (quota, Ctrl+C, crash)
 
 If a run stops early, the CSV and summary are still written for the answers finished so far,
@@ -28,11 +31,13 @@ What it measures
          different model family from the Gemini agent it grades.
      The judge is a model too: spot-check some of its grades by hand before trusting them.
 
-Outputs (same timestamp):
-  eval_results_<stamp>.csv     one row per question (and run), graded
-  eval_trace_<stamp>.jsonl     with --agent: every tool call, the chunk ids, scores and text it
-                               returned, the answer and both grades
-  eval_summary_<stamp>.json    with --agent: metrics overall and per category
+Outputs (same timestamp; <mode> is the search mode: vector, hybrid or keyword):
+  eval_results_<stamp>_<mode>.csv     one row per question (and run), graded
+  eval_trace_<stamp>_<mode>.jsonl     with --agent: every tool call, the chunk ids, scores and text it
+                                      returned, the answer and both grades
+  eval_summary_<stamp>_<mode>.json    with --agent: metrics overall and per category
+With --search all (the default) retrieval runs once per mode on the same embeddings, and the
+CSV and the agent use hybrid.
 
 The agent test is pinned to your saved filing: StockAnalyzer is patched in this process
 only, so it reads filing_AMZN.txt instead of fetching the latest filing from EDGAR.
@@ -52,8 +57,12 @@ import time
 
 import numpy as np
 
+import sec_rag
 from eval_grading import DEFAULT_JUDGE_MODEL, judge_answer, make_judge_client, number_check, summarize
+from keyword_search import BM25Index
 from sec_rag import SECVectorRAG
+
+SEARCH_MODES = ["vector", "hybrid", "keyword"]
 
 
 AGENT_ERROR_PREFIXES = ("Gemini Agent execution failed", "[ERROR]")
@@ -83,8 +92,14 @@ def ask_agent(nx, question: str, ticker: str, attempts: int = 4) -> str:
 
 
 def norm(s: str) -> str:
-    """Collapse all whitespace runs. The filing has long runs of spaces inside tables."""
-    return re.sub(r"\s+", " ", s or "").strip()
+    """Collapse all whitespace runs. The filing has long runs of spaces inside tables.
+
+    Markdown table pipes, bold markers and $ signs are removed too, so snippets copied from
+    the plain-text filing still match Markdown chunks (the Markdown tables repeat "$" in
+    every column; the plain text does not).
+    """
+    s = re.sub(r"[|*$]", " ", s or "")
+    return re.sub(r"\s+", " ", s).strip()
 
 
 def load_inputs(questions_path: str, filing_path: str):
@@ -108,7 +123,8 @@ def build_index(ticker: str, text: str):
     if not pairs:
         raise SystemExit("No embeddings were generated. Check GEMINI_API_KEY and quota.")
     matrix = np.vstack([p[1] for p in pairs]).astype(np.float32)
-    return rag, [p[0] for p in pairs], matrix, len(chunks)
+    kept = [p[0] for p in pairs]
+    return rag, kept, matrix, BM25Index(kept), len(chunks)
 
 
 def all_snippets(q):
@@ -118,15 +134,17 @@ def all_snippets(q):
     return [norm(q["evidence_snippet"])] + [norm(s) for s in q.get("alt_snippets", [])]
 
 
-def retrieval_eval(rag, chunks, embeddings, questions):
+def retrieval_eval(rag, chunks, embeddings, bm25, questions, mode="hybrid"):
     """Run each question text as the search query; find where the evidence chunk ranks.
+
+    mode = vector | hybrid | keyword (same search the app runs with NITROSTOX_SEARCH_MODE)
 
     strict  = primary snippet only
     lenient = primary snippet or any alternate snippet
     """
     results = {}
     for q in questions:
-        df = rag.vector_search_in_memory(q["question"], chunks, embeddings, top_k=5)
+        df = rag.search_in_memory(q["question"], chunks, embeddings, bm25, top_k=5, mode=mode)
         texts = [norm(t) for t in df["chunk_text"].tolist()] if not df.empty else []
         ids = [int(i) for i in df["chunk_index"].tolist()] if not df.empty else []
         snips = all_snippets(q)
@@ -138,7 +156,8 @@ def retrieval_eval(rag, chunks, embeddings, questions):
                 if rank_lenient is None and any(s in t for s in snips):
                     rank_lenient = i
         if df.empty:
-            print(f"WARNING: no search results for {q['id']} (query embedding failed?). Counted as a miss.")
+            why = "no keyword matched" if mode == "keyword" else "query embedding failed?"
+            print(f"WARNING: no {mode} search results for {q['id']} ({why}). Counted as a miss.")
         results[q["id"]] = {
             "empty": df.empty,
             "rank_strict": rank_strict,
@@ -170,9 +189,11 @@ def setup_agent(ticker: str, text: str):
             return 0
         self.sec_chunks = [p[0] for p in pairs]
         self.sec_embeddings = np.vstack([p[1] for p in pairs]).astype(np.float32)
+        self.sec_bm25 = BM25Index(self.sec_chunks)
         nx._KB_CACHE[self.ticker] = {
             "chunks": self.sec_chunks,
             "embeddings": self.sec_embeddings,
+            "bm25": self.sec_bm25,
             "built_at": time.time(),
         }
         return len(self.sec_chunks)
@@ -206,7 +227,7 @@ def setup_agent(ticker: str, text: str):
         for df in last_search:
             if df is not None and not df.empty:
                 chunks.extend({"chunk_index": int(r.chunk_index),
-                               "score": float(r.similarity_score),
+                               "score": float(r.similarity_score) if r.similarity_score is not None else float("nan"),
                                "text": r.chunk_text} for r in df.itertuples())
         call_log.append({"tool": "sec", "ticker": ticker, "query": query, "output": out, "chunks": chunks})
         return out
@@ -244,6 +265,9 @@ def main():
     ap.add_argument("--resume", metavar="TRACE_JSONL", default="",
                     help="continue an earlier --agent run: reuse its finished answers and ask only the rest")
     ap.add_argument("--no-judge", action="store_true", help="skip the LLM judge (number check still runs)")
+    ap.add_argument("--search", choices=SEARCH_MODES + ["all"], default="all",
+                    help="search mode: vector, hybrid (keyword + vector, RRF) or keyword. "
+                         "'all' compares the three in the retrieval test; the CSV and the agent then use hybrid.")
     ap.add_argument("--judge-model", default=DEFAULT_JUDGE_MODEL,
                     help="model for the LLM judge. claude-* uses ANTHROPIC_API_KEY; gemini-* uses GEMINI_API_KEY. "
                          "Default is a Claude model so the judge is not the same model family as the agent.")
@@ -258,28 +282,42 @@ def main():
     chunk_size, overlap = sig["chunk_size"].default, sig["overlap"].default
     print(f"Filing: {args.filing} ({len(text):,} chars) | chunk_size={chunk_size} overlap={overlap}")
 
-    rag, chunks, embeddings, n_total = build_index(args.ticker, text)
-    print(f"Index: {len(chunks)} of {n_total} chunks embedded")
+    rag, chunks, embeddings, bm25, n_total = build_index(args.ticker, text)
+    print(f"Index: {len(chunks)} of {n_total} chunks embedded (keyword index on the same chunks)")
 
-    retr = retrieval_eval(rag, chunks, embeddings, questions)
+    search_mode = "hybrid" if args.search == "all" else args.search  # used for the CSV and the agent
+    modes = SEARCH_MODES if args.search == "all" else [args.search]
+    retr_by_mode = {m: retrieval_eval(rag, chunks, embeddings, bm25, questions, mode=m) for m in modes}
+    retr = retr_by_mode[search_mode]
 
     # Summary over answerable questions that have a snippet
     scored = [q for q in questions if q.get("answerable") is True and q.get("evidence_snippet")]
-
-    def count(key, limit):
-        return sum(1 for q in scored if retr[q["id"]][key] is not None and retr[q["id"]][key] <= limit)
-
     n = len(scored)
-    print(f"\nRETRIEVAL (question text used as the query, answerable questions only, n={n})")
-    print(f"  strict  (primary snippet only):      hit@3 {count('rank_strict', 3)}/{n}   hit@5 {count('rank_strict', 5)}/{n}")
-    print(f"  lenient (primary or alternate):      hit@3 {count('rank_lenient', 3)}/{n}   hit@5 {count('rank_lenient', 5)}/{n}")
-    empties = [qid for qid, r in retr.items() if r["empty"]]
-    if empties:
-        print(f"  WARNING: {len(empties)} queries returned nothing: {empties}. Rerun before trusting these numbers.")
-    miss_s = [q["id"] for q in scored if retr[q["id"]]["rank_strict"] is None]
-    miss_l = [q["id"] for q in scored if retr[q["id"]]["rank_lenient"] is None]
-    print(f"  not in top 5 (strict):  {miss_s if miss_s else 'none'}")
-    print(f"  not in top 5 (lenient): {miss_l if miss_l else 'none'}")
+
+    for m, rm in retr_by_mode.items():
+        def count(key, limit):
+            return sum(1 for q in scored if rm[q["id"]][key] is not None and rm[q["id"]][key] <= limit)
+
+        print(f"\nRETRIEVAL [{m}] (question text used as the query, answerable questions only, n={n})")
+        print(f"  strict  (primary snippet only):      hit@3 {count('rank_strict', 3)}/{n}   hit@5 {count('rank_strict', 5)}/{n}")
+        print(f"  lenient (primary or alternate):      hit@3 {count('rank_lenient', 3)}/{n}   hit@5 {count('rank_lenient', 5)}/{n}")
+        empties = [qid for qid, r in rm.items() if r["empty"]]
+        if empties and m != "keyword":  # keyword search can legitimately find nothing
+            print(f"  WARNING: {len(empties)} queries returned nothing: {empties}. Rerun before trusting these numbers.")
+        miss_s = [q["id"] for q in scored if rm[q["id"]]["rank_strict"] is None]
+        miss_l = [q["id"] for q in scored if rm[q["id"]]["rank_lenient"] is None]
+        print(f"  not in top 5 (strict):  {miss_s if miss_s else 'none'}")
+        print(f"  not in top 5 (lenient): {miss_l if miss_l else 'none'}")
+
+    if len(modes) > 1:
+        # Questions whose evidence chunk (lenient) ranks differently between modes; '-' = not in top 5
+        changed = [q for q in scored if len({retr_by_mode[m][q["id"]]["rank_lenient"] for m in modes}) > 1]
+        print(f"\nRANK CHANGES (lenient rank of the evidence chunk, '-' = not in top 5): {len(changed)} of {n}")
+        if changed:
+            print("  " + "id".ljust(10) + "".join(m.ljust(10) for m in modes))
+            for q in changed:
+                cells = [retr_by_mode[m][q["id"]]["rank_lenient"] for m in modes]
+                print("  " + q["id"].ljust(10) + "".join(("-" if c is None else str(c)).ljust(10) for c in cells))
 
     stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     agent_rows = {}
@@ -288,12 +326,14 @@ def main():
     if args.resume and not args.agent:
         raise SystemExit("--resume only makes sense together with --agent")
     if args.agent:
+        sec_rag.SEARCH_MODE = search_mode  # search_sec_filings reads this when the agent searches
+        print(f"Agent search mode: {search_mode}")
         nx, call_log = setup_agent(args.ticker, text)
         judge_client = None
         if not args.no_judge:
             judge_client = make_judge_client(args.judge_model)  # fails fast if the key or package is missing
 
-        trace_path = f"eval_trace_{stamp}.jsonl"
+        trace_path = f"eval_trace_{stamp}_{search_mode}.jsonl"
         trace_mode = "w"
         if args.resume:
             trace_path, trace_mode = args.resume, "a"
@@ -397,17 +437,17 @@ def main():
                 print(f"\nSTOPPED EARLY: {type(e).__name__}: {e}")
 
         summary = summarize(list(agent_rows.values()))
-        summary_path = f"eval_summary_{stamp}.json"
+        summary_path = f"eval_summary_{stamp}_{search_mode}.json"
         with open(summary_path, "w", encoding="utf-8") as f:
-            json.dump({"run_at": stamp, "filing": args.filing, "runs": args.runs,
+            json.dump({"run_at": stamp, "filing": args.filing, "runs": args.runs, "search_mode": search_mode,
                        "judge_model": None if args.no_judge else args.judge_model,
                        "complete": not stopped_early, "answers_finished": len(agent_rows),
                        "answers_expected": len(questions) * args.runs, **summary}, f, indent=2)
         print("\nAGENT SUMMARY")
         print(json.dumps(summary, indent=2))
         print(f"\nSaved: {trace_path}\nSaved: {summary_path}")
-    out_path = f"eval_results_{stamp}.csv"
-    fields = ["run_at", "id", "category", "answerable", "question", "expected_answer",
+    out_path = f"eval_results_{stamp}_{search_mode}.csv"
+    fields = ["run_at", "search_mode", "id", "category", "answerable", "question", "expected_answer",
               "rank_strict", "rank_lenient", "hit_at_3_lenient", "hit_at_5_lenient", "top5_chunk_ids",
               "run", "agent_tools_called", "agent_called_sec_tool", "agent_search_queries",
               "agent_chunk_ids", "agent_chunk_scores", "agent_chunks_contain_snippet",
@@ -420,7 +460,7 @@ def main():
         for q in questions:
             r = retr[q["id"]]
             base = {
-                "run_at": stamp, "id": q["id"], "category": q["category"], "answerable": q["answerable"],
+                "run_at": stamp, "search_mode": search_mode, "id": q["id"], "category": q["category"], "answerable": q["answerable"],
                 "question": q["question"], "expected_answer": q.get("expected_answer") or "",
                 "rank_strict": r["rank_strict"] if r["rank_strict"] is not None else "",
                 "rank_lenient": r["rank_lenient"] if r["rank_lenient"] is not None else "",
@@ -451,7 +491,7 @@ def main():
     print(f"\nSaved: {out_path}")
     if stopped_early:
         print(f"\nThe run did not finish: {len(agent_rows)} of {len(questions) * args.runs} answers are saved.\n"
-              f"To do only the rest, run:\n  python run_eval.py --agent --runs {args.runs} --resume {trace_path}")
+              f"To do only the rest, run:\n  python run_eval.py --agent --runs {args.runs} --search {search_mode} --resume {trace_path}")
     if not args.agent:
         print("NOTE: this was retrieval only, so the agent_answer columns are empty. "
               "Run again with:  python run_eval.py --agent --runs 2")
