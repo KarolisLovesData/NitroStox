@@ -11,6 +11,7 @@ upgraded_nitrostox.py, filing_AMZN.txt and eval_questions_AMZN.json.
   python run_eval.py --search all        # retrieval for vector, hybrid and keyword search side by side
   python run_eval.py --agent --runs 2 --search vector   # agent with vector-only search
   python run_eval.py --agent --runs 2 --search hybrid   # agent with hybrid (keyword + vector) search
+  python run_eval.py --chunker fixed     # old 2,000-character chunks, to compare with the default "table"
   python run_eval.py --agent --runs 2 --resume eval_trace_<stamp>_<mode>.jsonl
                                          # continue a run that stopped early (quota, Ctrl+C, crash)
 
@@ -25,8 +26,12 @@ What it measures
      user takes. The script records the answer, whether the agent called the SEC tool,
      and whether the chunks it received contained your snippet. Each answer is then graded:
        - number check: numbers in the answer that do not appear in the tool output
+       - citation check: every [chunk N] the answer cites was really retrieved, every sentence
+         with a number has a citation, and those numbers are in the chunk it cites. Also: does a
+         cited chunk contain your evidence_snippet (the citation points at the right place)?
        - LLM judge: correctness vs expected_answer, grounded in the tool output or not,
-         wrong-period figures, and refusal on unanswerable questions. The judge is Claude
+         wrong-period figures, whether the citations support their claims, and refusal on
+         unanswerable questions. The judge is Claude
          (default claude-sonnet-5-5, needs ANTHROPIC_API_KEY and `pip install anthropic`), a
          different model family from the Gemini agent it grades.
      The judge is a model too: spot-check some of its grades by hand before trusting them.
@@ -58,7 +63,8 @@ import time
 import numpy as np
 
 import sec_rag
-from eval_grading import DEFAULT_JUDGE_MODEL, judge_answer, make_judge_client, number_check, summarize
+from eval_grading import (DEFAULT_JUDGE_MODEL, check_citations, judge_answer, make_judge_client,
+                          number_check, summarize)
 from keyword_search import BM25Index
 from sec_rag import SECVectorRAG
 
@@ -74,21 +80,28 @@ def is_agent_error(answer: str) -> bool:
     return (answer or "").startswith(AGENT_ERROR_PREFIXES)
 
 
-def ask_agent(nx, question: str, ticker: str, attempts: int = 4) -> str:
-    """One agent turn, retried with a growing pause when Gemini is overloaded (503) or rate limited (429)."""
-    answer = ""
+def ask_agent(nx, question: str, ticker: str, attempts: int = 4) -> tuple[str, bool]:
+    """One agent turn, retried with a growing pause when Gemini is overloaded (503) or rate limited (429).
+
+    Returns (answer, rewritten): rewritten is True when the app sent the agent back to fix its citations.
+    """
+    answer, rewritten = "", False
     for attempt in range(attempts):
         try:
-            answer = nx.run_gemini_agent(question, active_ticker=ticker)
+            if hasattr(nx, "run_gemini_agent_detailed"):
+                res = nx.run_gemini_agent_detailed(question, active_ticker=ticker)
+                answer, rewritten = res["answer"], bool(res.get("rewritten"))
+            else:
+                answer = nx.run_gemini_agent(question, active_ticker=ticker)
         except Exception as e:
             answer = f"[ERROR] {e}"
         if not is_agent_error(answer):
-            return answer
+            return answer, rewritten
         if attempt < attempts - 1:
             wait = 15 * 2 ** attempt
             print(f"    agent call failed ({answer[:90]}...), retrying in {wait}s")
             time.sleep(wait)
-    return answer
+    return answer, rewritten
 
 
 def norm(s: str) -> str:
@@ -264,6 +277,9 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="only the first N questions (smoke test)")
     ap.add_argument("--resume", metavar="TRACE_JSONL", default="",
                     help="continue an earlier --agent run: reuse its finished answers and ask only the rest")
+    ap.add_argument("--chunker", choices=["table", "fixed"], default="table",
+                    help="table = header-keeping chunks the app now uses; fixed = the old 2,000-character windows "
+                         "(run both to compare)")
     ap.add_argument("--no-judge", action="store_true", help="skip the LLM judge (number check still runs)")
     ap.add_argument("--search", choices=SEARCH_MODES + ["all"], default="all",
                     help="search mode: vector, hybrid (keyword + vector, RRF) or keyword. "
@@ -278,9 +294,11 @@ def main():
     spec, text = load_inputs(args.questions, args.filing)
     questions = spec["questions"][: args.limit] if args.limit else spec["questions"]
 
+    SECVectorRAG.DEFAULT_STRATEGY = args.chunker  # the app and the agent test both read this
     sig = inspect.signature(SECVectorRAG.chunk_text).parameters
     chunk_size, overlap = sig["chunk_size"].default, sig["overlap"].default
-    print(f"Filing: {args.filing} ({len(text):,} chars) | chunk_size={chunk_size} overlap={overlap}")
+    print(f"Filing: {args.filing} ({len(text):,} chars) | chunker={args.chunker} "
+          f"chunk_size={chunk_size} overlap={overlap}")
 
     rag, chunks, embeddings, bm25, n_total = build_index(args.ticker, text)
     print(f"Index: {len(chunks)} of {n_total} chunks embedded (keyword index on the same chunks)")
@@ -377,7 +395,7 @@ def main():
                     if (q["id"], run) in agent_rows:
                         continue
                     call_log.clear()
-                    answer = ask_agent(nx, q["question"], args.ticker)
+                    answer, rewritten = ask_agent(nx, q["question"], args.ticker)
                     if is_agent_error(answer):
                         # Not a real answer: do not save it, so --resume asks this question again
                         failures += 1
@@ -392,6 +410,12 @@ def main():
                     chunk_hits = [h for c in sec_calls for h in c["chunks"]]
 
                     numbers = number_check(answer, tool_text)
+                    sources = {str(h["chunk_index"]): h["text"] for h in chunk_hits}
+                    if any(c["tool"] == "technical" for c in calls):
+                        sources["signals"] = "\n".join(c["output"] for c in calls if c["tool"] == "technical")
+                    cites = check_citations(answer, sources)
+                    cited_text = norm(" ".join(sources[c] for c in cites["cited"] if c in sources))
+                    cited_evidence = (any(sn in cited_text for sn in snips) if snips else None)
                     judge = None
                     if judge_client:
                         judge = judge_answer(judge_client, args.judge_model, q, answer, tool_text)
@@ -414,6 +438,9 @@ def main():
                         "snippet_in_chunks": (any(sn in retrieved for sn in snips) if sec_calls else False) if snips else None,
                         "answer": answer,
                         "number_check": numbers,
+                        "citations": cites,
+                        "cited_evidence": cited_evidence,
+                        "rewritten": rewritten,
                         "judge": judge,
                         "judge_model": args.judge_model if judge else None,
                     }
@@ -425,6 +452,9 @@ def main():
 
                     grade = judge.get("correctness", "judge error") if judge else "-"
                     flag = f" unsupported numbers: {numbers['unsupported_numbers']}" if numbers["unsupported_numbers"] else ""
+                    flag += "" if cites["ok"] else (f" citation problems: {len(cites['invalid'])} invalid, "
+                                                    f"{len(cites['uncited_claims'])} uncited, "
+                                                    f"{len(cites['unsupported'])} not in cited chunk")
                     print(f"  {q['id']} run {run}: sec_tool={'yes' if sec_calls else 'NO'} "
                           f"chunks=[{row['chunk_ids']}] judge={grade}{flag}")
                     time.sleep(1.5)
@@ -440,6 +470,7 @@ def main():
         summary_path = f"eval_summary_{stamp}_{search_mode}.json"
         with open(summary_path, "w", encoding="utf-8") as f:
             json.dump({"run_at": stamp, "filing": args.filing, "runs": args.runs, "search_mode": search_mode,
+                       "chunker": args.chunker,
                        "judge_model": None if args.no_judge else args.judge_model,
                        "complete": not stopped_early, "answers_finished": len(agent_rows),
                        "answers_expected": len(questions) * args.runs, **summary}, f, indent=2)
@@ -451,8 +482,10 @@ def main():
               "rank_strict", "rank_lenient", "hit_at_3_lenient", "hit_at_5_lenient", "top5_chunk_ids",
               "run", "agent_tools_called", "agent_called_sec_tool", "agent_search_queries",
               "agent_chunk_ids", "agent_chunk_scores", "agent_chunks_contain_snippet",
-              "agent_answer", "unsupported_numbers", "judge_correctness", "judge_grounded",
-              "judge_period_error", "judge_unsupported_claims", "judge_reason", "grade", "notes"]
+              "agent_answer", "unsupported_numbers", "citations", "citations_ok", "invalid_citations",
+              "uncited_claims", "numbers_not_in_cited_chunk", "cited_chunks_contain_evidence", "rewritten",
+              "judge_correctness", "judge_grounded", "judge_period_error", "judge_citations_supported",
+              "judge_unsupported_claims", "judge_reason", "grade", "notes"]
     agent_cols = fields[fields.index("run"):]
     with open(out_path, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -474,6 +507,7 @@ def main():
                     if a is None:  # run stopped before this answer; resume will fill it in
                         continue
                     j = a["judge"] or {}
+                    ct = a.get("citations") or {}  # absent in traces from before citations were added
                     w.writerow({**base, "run": run, "agent_tools_called": a["tools"],
                                 "agent_called_sec_tool": a["called"],
                                 "agent_search_queries": a["queries"],
@@ -481,6 +515,15 @@ def main():
                                 "agent_chunks_contain_snippet": "" if a["snippet_in_chunks"] is None else a["snippet_in_chunks"],
                                 "agent_answer": a["answer"],
                                 "unsupported_numbers": " ; ".join(a["number_check"]["unsupported_numbers"]),
+                                "citations": " ".join(ct.get("cited", [])),
+                                "citations_ok": ct.get("ok", ""),
+                                "invalid_citations": " ".join(ct.get("invalid", [])),
+                                "uncited_claims": " ; ".join(ct.get("uncited_claims", [])),
+                                "numbers_not_in_cited_chunk": " ; ".join(
+                                    f"{', '.join(u['numbers'])} ({u['sentence'][:80]})" for u in ct.get("unsupported", [])),
+                                "cited_chunks_contain_evidence": "" if a.get("cited_evidence") is None else a["cited_evidence"],
+                                "rewritten": a.get("rewritten", ""),
+                                "judge_citations_supported": j.get("citations_supported", ""),
                                 "judge_correctness": j.get("correctness", j.get("judge_error", "")),
                                 "judge_grounded": j.get("grounded", ""),
                                 "judge_period_error": j.get("period_error", ""),

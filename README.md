@@ -43,6 +43,7 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 * **In-warehouse analytics (ELT):** prices are loaded into BigQuery, where chained CTEs and window functions (`LAG`, `AVG`/`MAX`/`SUM OVER`) compute Wilder's RSI, moving averages and Z-scores.
 * **In-memory hybrid RAG:** the filing is downloaded as Markdown and split by paragraph and table (up to 2,000 characters, 300 overlap). Every chunk starts with its section name, and every table chunk repeats the table's caption and column headers, so a row never loses its period. Each question is searched two ways: by meaning (`gemini-embedding-001` embeddings, ranked by NumPy cosine similarity) and by exact words (a small BM25 keyword search, so figures, years and line items like "net income" are matched literally). The two result lists are merged with Reciprocal Rank Fusion. Set `NITROSTOX_SEARCH_MODE` to `vector` or `keyword` to use one method alone. The index is cached per ticker for 24 hours, not stored in BigQuery.
 * **ReAct agent:** Gemini 3.7 Flash calls three Python tools: filing search, BigQuery indicator lookup, and a BigQuery watchlist manager. It remembers the last six messages.
+* **Cited answers:** the agent must tag every fact with the chunk it came from, like `[chunk 12]`, and say "The filing doesn't say" when the search finds nothing. The app checks each answer in code: cited chunks must be ones the search returned, every number needs a citation, and the number must appear in the cited chunk. If a check fails, the agent rewrites once; if it still fails, the answer shows a warning. The chat shows the cited text under each answer.
 * **Parallel ingestion:** `ThreadPoolExecutor` fetches market data, dividends and insider trades concurrently, then runs the dependent BigQuery reads in parallel.
 * **Cost control:** Streamlit caching (1-hour TTL on AI results) and the 24-hour filing cache stop widget clicks from re-querying BigQuery, Yahoo Finance, SEC EDGAR or the LLM.
 
@@ -79,20 +80,21 @@ I tested the filing Q&A agent on **Amazon's latest 10-Q**: 20 questions, each as
 
 | Of 40 answers | Count | Example |
 | :--- | :---: | :--- |
-| ✅ Correct | **25** | Net income $62.6B, up from $18.2B (18 right answers + 7 correct "not in the filing") |
-| 🟡 Partly right | **10** | Right number, but missed part of the question |
+| ✅ Correct | **28** | Net income $62.6B, up from $18.2B (18 right answers + 10 correct "not in the filing") |
+| 🟡 Partly right | **10** | Right numbers, but left out part of the explanation |
 | ❌ Wrong | **0** | |
-| 🚫 Made up or from outside knowledge | **5** | Gross margin isn't in the filing, and the agent made up 52.3% |
+| 🚫 Made up or from outside knowledge | **0** | Gross margin isn't in the filing: the agent now says so instead of inventing 52.3% |
 
-The search step found the right passage for **27 of 28** answers to answerable questions.
+Every one of the 40 answers passed the code citation check, and the numbers in them all appear in the filing text the agent was given. The search step found the right passage for **26 of 28** answers to answerable questions.
 
 **What the first test found**
 1. **Tables lose their headers when chunked.** The agent reported $18.2B (last year's net income) instead of $62.6B (this quarter's).
 2. **The chat agent isn't told to stick to the filing,** so it answers from general knowledge (CEO pay, market share).
 
 **What I changed because of it**
+- I made the agent cite the filing chunk behind every fact (for example `[chunk 14]`) and added a code check on those citations. Before this change the agent made up or used outside knowledge in 5 of 40 answers; now it says "The filing doesn't say" instead (10 of 12 unanswerable questions, and the other 2 were a stock price question it answered from the price table with a citation). In 16 of 40 answers the agent first had to rewrite its citations.
 - I rebuilt the chunking ([`chunking.py`](src/chunking.py)) so every table chunk keeps its title and column headers. Net income is now right in both runs, and no answer in the re-test is wrong.
-- I added keyword search next to the vector search, so the search is now **hybrid** ([`keyword_search.py`](src/keyword_search.py)). I ran the same test with each method:
+- I added keyword search next to the vector search, so the search is now **hybrid** ([`keyword_search.py`](src/keyword_search.py)). I ran the same test with each method (before the citations were added):
 
 | Same 40 answers | Vector search only | Hybrid search |
 | :--- | :---: | :---: |
@@ -103,9 +105,9 @@ The search step found the right passage for **27 of 28** answers to answerable q
 
   The difference is one answer, so hybrid matches vector on this test. It stays on as the default because it is safer for exact figures and years, and `NITROSTOX_SEARCH_MODE=vector` switches it off.
 
-The first test was graded by hand and this one by Claude, so their counts are not directly comparable.
+The first test was graded by hand and these by Claude, so their counts are not directly comparable.
 
-**Still to do:** make the agent cite the filing chunk behind every fact, with a code check on those citations, and stop it answering from outside knowledge.
+**Still to do:** the 10 partly right answers are correct but incomplete (for example, they do not mention that the jump in net income came mostly from investment gains), and the judge found only 27 of 40 citations fully supported the claim next to them.
 
 **How to run**
 
@@ -119,7 +121,7 @@ python run_eval.py --filing filing_AMZN.md --agent --runs 2 --search vector  # s
 
 The default search is hybrid. To compare search methods, add `--search vector`, `--search hybrid` or `--search keyword`; `--search all` runs the retrieval test for all three side by side.
 
-With `--agent`, a script flags figures that are not in the retrieved text, and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
+With `--agent`, a script flags figures that are not in the retrieved text and checks the citations (valid, present, and pointing at a chunk that holds the figure), and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
 
 <details>
 <summary><b>📖 Glossary for beginners (click to expand)</b></summary>
