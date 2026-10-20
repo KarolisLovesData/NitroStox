@@ -122,17 +122,6 @@ The default search is hybrid. To compare search methods, add `--search vector`, 
 
 With `--agent`, a script flags figures that are not in the retrieved text and checks the citations (valid, present, and pointing at a chunk that holds the figure), and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
 
-## ⚠️ Limitations & Next Steps
-
-| Limitation | Next step |
-| :--- | :--- |
-| Citation checks catch numbers, not wording | Have the judge score every cited sentence |
-| In Markdown tables a `$` sign gets its own cell, so some rows are shifted against the headers | Merge `$` cells before chunking |
-| Refusals are prompt-enforced; search has no similarity cutoff | Add a code-level relevance threshold |
-| Only the latest filing, in memory, one ticker at a time | Persist vectors if the corpus grows |
-| AI errors are cached for an hour; saved results aren't de-duplicated | Skip caching errors; upsert results per ticker |
-| Evaluation covers one company | Rerun against this baseline and add a second company |
-
 <details>
 <summary><b>📖 Glossary for beginners (click to expand)</b></summary>
 
