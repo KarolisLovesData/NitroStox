@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import yfinance as yf
 from sec_rag import SECVectorRAG
+from keyword_search import BM25Index
 from price_chart import build_price_figure
 import zoneinfo
 
@@ -99,6 +100,7 @@ class StockAnalyzer:
         # Local RAM states for vector search
         self.sec_chunks = []
         self.sec_embeddings = []
+        self.sec_bm25 = None  # keyword index over the same chunks (hybrid search)
         self.sec_error = ""  # last reason the SEC knowledge base failed to build (shown in the UI)
         self._kb_lock = threading.Lock()
         self._news = None
@@ -461,6 +463,7 @@ class StockAnalyzer:
             if cached and time.time() - cached["built_at"] < _KB_CACHE_TTL_SECONDS:
                 self.sec_chunks = cached["chunks"]
                 self.sec_embeddings = cached["embeddings"]
+                self.sec_bm25 = cached.get("bm25") or BM25Index(self.sec_chunks)
                 print(f"⚡ Loaded {len(self.sec_chunks)} cached SEC chunks for {self.ticker}.")
                 return len(self.sec_chunks)
 
@@ -532,10 +535,12 @@ class StockAnalyzer:
                       "retrieval will be incomplete.")
 
             self.sec_chunks = [p[0] for p in valid_pairs]
+            self.sec_bm25 = BM25Index(self.sec_chunks)  # same filtered list, so chunk_index lines up
             self.sec_embeddings = np.vstack([p[1] for p in valid_pairs]).astype(np.float32)
             _KB_CACHE[self.ticker] = {
                 "chunks": self.sec_chunks,
                 "embeddings": self.sec_embeddings,
+                "bm25": self.sec_bm25,
                 "built_at": time.time(),
             }
 
@@ -558,9 +563,9 @@ class StockAnalyzer:
                 return pd.DataFrame()
 
             rag = SECVectorRAG(self.ticker)
-            return rag.vector_search_in_memory(query, self.sec_chunks, self.sec_embeddings, top_k)
+            return rag.search_in_memory(query, self.sec_chunks, self.sec_embeddings, self.sec_bm25, top_k)
         except Exception as e:
-            print(f"⚠️ SEC RAM Vector Search Failed: {e}")
+            print(f"⚠️ SEC RAM Search Failed: {e}")
             return pd.DataFrame()
 
     def analyze_sentiment(
@@ -884,12 +889,13 @@ def _analyzer_for(ticker: str) -> "StockAnalyzer":
 
 
 def tool_query_sec_filings(ticker: str, query: str) -> str:
-    """Queries the in-memory vector database for SEC 10-Q filing text chunks matching a specific semantic query.
+    """Searches the latest SEC filing (10-Q/10-K) text chunks by meaning and by exact terms (hybrid keyword + vector search).
 
     Args:
         ticker: Stock ticker symbol (e.g. 'AAPL', 'NVDA', 'PLTR').
-        query: Specific keyword or financial topic to search (e.g. 'supply chain',
-          'revenue guidance', 'capex').
+        query: Financial topic or exact terms to search. Exact line-item names, years and
+          figures work well (e.g. 'net income three months ended September 30 2024',
+          'supply chain', 'revenue guidance', 'capex').
     """
     try:
         analyzer = _analyzer_for(ticker)

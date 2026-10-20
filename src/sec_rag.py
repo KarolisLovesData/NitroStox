@@ -23,6 +23,13 @@ client = genai.Client(
 EMBED_MODEL = "models/gemini-embedding-001"
 EMBED_BATCH_SIZE = 20  # chunks per embed_content call (~300 chunks -> ~15 calls instead of ~300)
 
+# Search mode: "hybrid" (BM25 keyword + vector, fused with RRF), "vector" or "keyword"
+SEARCH_MODE = os.getenv("NITROSTOX_SEARCH_MODE", "hybrid")
+RRF_K = 60            # same k constant as the Text-to-SQL engine
+RRF_CANDIDATES = 20   # each list contributes its top 20 to the fusion
+VECTOR_WEIGHT = 1.0
+KEYWORD_WEIGHT = 1.0
+
 
 def _extract_vectors(response) -> list[tuple]:
     """Pulls vectors out of an embed_content response (handles both response shapes)."""
@@ -112,13 +119,12 @@ class SECVectorRAG:
 
         return [vec for batch_vectors in results for vec in batch_vectors]
 
-    def vector_search_in_memory(self, user_query: str, chunks: list[str], chunk_embeddings,
-                                top_k: int = 5) -> pd.DataFrame:
-        """Executes high-speed cosine similarity search using NumPy in Python RAM."""
+    def _vector_ranking(self, user_query: str, chunk_embeddings) -> list[tuple[int, float]]:
+        """All chunks as (chunk_index, cosine similarity), best first. [] if the query embedding failed."""
         query_vector = self.generate_embedding(user_query)
 
         if not query_vector or len(chunk_embeddings) == 0:
-            return pd.DataFrame()
+            return []
 
         # Convert to NumPy arrays
         query_vec = np.asarray(query_vector, dtype=np.float32)
@@ -131,15 +137,75 @@ class SECVectorRAG:
         # Compute cosine similarity via dot product
         similarities = np.dot(matrix_norms, query_norm)
 
-        # Sort and get top_k indices
-        top_indices = np.argsort(similarities)[::-1][:top_k]
+        order = np.argsort(similarities)[::-1]
+        return [(int(idx), float(similarities[idx])) for idx in order]
+
+    def vector_search_in_memory(self, user_query: str, chunks: list[str], chunk_embeddings,
+                                top_k: int = 5) -> pd.DataFrame:
+        """Executes high-speed cosine similarity search using NumPy in Python RAM."""
+        ranking = self._vector_ranking(user_query, chunk_embeddings)
+        if not ranking:
+            return pd.DataFrame()
 
         results = []
-        for idx in top_indices:
+        for idx, score in ranking[:top_k]:
             results.append({
                 "chunk_index": idx,
                 "chunk_text": chunks[idx],
-                "similarity_score": round(float(similarities[idx]), 4)
+                "similarity_score": round(score, 4)
+            })
+
+        return pd.DataFrame(results)
+
+    def search_in_memory(self, user_query: str, chunks: list[str], chunk_embeddings, bm25,
+                         top_k: int = 5, mode: str = None) -> pd.DataFrame:
+        """Hybrid search: BM25 keyword list + vector list, fused with Reciprocal Rank Fusion.
+
+        mode: "hybrid" (default from NITROSTOX_SEARCH_MODE), "vector" or "keyword".
+        Returns the same columns as vector_search_in_memory (chunk_index, chunk_text,
+        similarity_score = cosine) plus rrf_score, vector_rank and keyword_rank.
+        """
+        mode = (mode or SEARCH_MODE).lower()
+        if mode == "vector" or bm25 is None:
+            return self.vector_search_in_memory(user_query, chunks, chunk_embeddings, top_k)
+
+        # The vector list is computed in keyword mode too, so similarity_score keeps its meaning
+        vec_full = self._vector_ranking(user_query, chunk_embeddings)
+        kw = bm25.search(user_query, RRF_CANDIDATES)
+        if not vec_full and mode != "keyword":
+            print("⚠️ Query embedding failed; keyword-only results.")
+
+        cosine = {idx: score for idx, score in vec_full}
+        vec_rank = {idx: r for r, (idx, _) in enumerate(vec_full[:RRF_CANDIDATES], start=1)}
+        kw_rank = {idx: r for r, (idx, _) in enumerate(kw, start=1)}
+
+        # RRF: score += weight / (k + rank), rank 1-based (Text-to-SQL uses 0-based rank + 1)
+        rrf = {}
+        if mode != "keyword":
+            for idx, r in vec_rank.items():
+                rrf[idx] = rrf.get(idx, 0.0) + VECTOR_WEIGHT / (RRF_K + r)
+        for idx, r in kw_rank.items():
+            rrf[idx] = rrf.get(idx, 0.0) + KEYWORD_WEIGHT / (RRF_K + r)
+
+        if not rrf:
+            return pd.DataFrame()
+
+        # Hybrid ties go to the better vector rank, then the better keyword rank
+        big = len(chunks) + 1
+        if mode == "keyword":
+            ordered = sorted(rrf, key=lambda i: (kw_rank[i], i))
+        else:
+            ordered = sorted(rrf, key=lambda i: (-rrf[i], vec_rank.get(i, big), kw_rank.get(i, big)))
+
+        results = []
+        for idx in ordered[:top_k]:
+            results.append({
+                "chunk_index": idx,
+                "chunk_text": chunks[idx],
+                "similarity_score": round(cosine[idx], 4) if idx in cosine else None,
+                "rrf_score": round(rrf[idx], 6),
+                "vector_rank": vec_rank.get(idx),
+                "keyword_rank": kw_rank.get(idx),
             })
 
         return pd.DataFrame(results)
