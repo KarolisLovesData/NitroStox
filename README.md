@@ -92,7 +92,16 @@ The search step found the right passage for **27 of 28** answers to answerable q
 
 **What I changed because of it**
 - I rebuilt the chunking ([`chunking.py`](src/chunking.py)) so every table chunk keeps its title and column headers. Net income is now right in both runs, and no answer in the re-test is wrong.
-- I added keyword search next to the vector search ([`keyword_search.py`](src/keyword_search.py)). On this test it scored about the same as vector search alone (18 vs 17 fully correct answers), so it stays on as a safeguard for exact figures and years.
+- I added keyword search next to the vector search, so the search is now **hybrid** ([`keyword_search.py`](src/keyword_search.py)). I ran the same test with each method:
+
+| Same 40 answers | Vector search only | Hybrid search |
+| :--- | :---: | :---: |
+| Fully correct (of 28 answerable) | 17 | **18** |
+| Wrong | 0 | 0 |
+| Said "not in the filing" when it should (of 12) | 6 | **7** |
+| Right passage found by the search (of 28) | 26 | **27** |
+
+  The difference is one answer, so hybrid matches vector on this test. It stays on as the default because it is safer for exact figures and years, and `NITROSTOX_SEARCH_MODE=vector` switches it off.
 
 The first test was graded by hand and this one by Claude, so their counts are not directly comparable.
 
@@ -111,17 +120,6 @@ python run_eval.py --filing filing_AMZN.md --agent --runs 2 --search vector  # s
 The default search is hybrid. To compare search methods, add `--search vector`, `--search hybrid` or `--search keyword`; `--search all` runs the retrieval test for all three side by side.
 
 With `--agent`, a script flags figures that are not in the retrieved text, and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
-
-## ⚠️ Limitations & Next Steps
-
-| Limitation | Next step |
-| :--- | :--- |
-| Chat agent can answer from outside knowledge | Restrict filing questions to retrieved text |
-| In Markdown tables a `$` sign gets its own cell, so some rows are shifted against the headers | Merge `$` cells before chunking |
-| Refusals are prompt-enforced; search has no similarity cutoff | Add a code-level relevance threshold |
-| Only the latest filing, in memory, one ticker at a time | Persist vectors if the corpus grows |
-| AI errors are cached for an hour; saved results aren't de-duplicated | Skip caching errors; upsert results per ticker |
-| Evaluation covers one company | Rerun against this baseline and add a second company |
 
 <details>
 <summary><b>📖 Glossary for beginners (click to expand)</b></summary>
