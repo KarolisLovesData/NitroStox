@@ -94,10 +94,11 @@ def ask_agent(nx, question: str, ticker: str, attempts: int = 4) -> str:
 def norm(s: str) -> str:
     """Collapse all whitespace runs. The filing has long runs of spaces inside tables.
 
-    Markdown table pipes and bold markers are removed too, so snippets copied from the
-    plain-text filing can still match Markdown chunks (stopgap until the snippets are re-copied).
+    Markdown table pipes, bold markers and $ signs are removed too, so snippets copied from
+    the plain-text filing still match Markdown chunks (the Markdown tables repeat "$" in
+    every column; the plain text does not).
     """
-    s = re.sub(r"[|*]", " ", s or "")
+    s = re.sub(r"[|*$]", " ", s or "")
     return re.sub(r"\s+", " ", s).strip()
 
 
