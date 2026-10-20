@@ -164,11 +164,20 @@ streamlit run app.py           # dashboard
 ```
 
 **4. Deploy to Cloud Run**
+
+One-time setup: store the Gemini key as a secret, and let the service's account read it and use BigQuery (Cloud Run has no key file, it uses this account).
 ```bash
-gcloud builds submit --tag gcr.io/$GCP_PROJECT_ID/nitrostox-app
-gcloud run deploy nitrostox-app \
-  --image gcr.io/$GCP_PROJECT_ID/nitrostox-app \
-  --platform managed --region us-central1 --no-allow-unauthenticated --max-instances 1 \
+printf "%s" "your_gemini_api_key" | gcloud secrets create gemini-api-key --data-file=-
+SA=$(gcloud projects describe $GCP_PROJECT_ID --format="value(projectNumber)")-compute@developer.gserviceaccount.com
+gcloud secrets add-iam-policy-binding gemini-api-key --member=serviceAccount:$SA --role=roles/secretmanager.secretAccessor
+gcloud projects add-iam-policy-binding $GCP_PROJECT_ID --member=serviceAccount:$SA --role=roles/bigquery.dataEditor
+gcloud projects add-iam-policy-binding $GCP_PROJECT_ID --member=serviceAccount:$SA --role=roles/bigquery.jobUser
+```
+
+Deploy (this builds the image from the `Dockerfile` and deploys it in one command):
+```bash
+gcloud run deploy nitrostox-app --source . \
+  --region us-central1 --no-allow-unauthenticated --max-instances 1 \
   --set-env-vars GCP_PROJECT_ID=$GCP_PROJECT_ID,BQ_DATASET=$BQ_DATASET,SEC_IDENTITY=$SEC_IDENTITY \
   --set-secrets GEMINI_API_KEY=gemini-api-key:latest
 ```
