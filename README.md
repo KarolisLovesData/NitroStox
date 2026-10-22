@@ -110,6 +110,20 @@ Every one of the 40 answers passed the code citation check, and the numbers in t
 
 The first test was graded by hand and these by Claude, so their counts are not directly comparable.
 
+**Does the agent pick the right tool?**
+
+The agent has three tools: filing search, price and indicator signals (BigQuery), and the watchlist. I wrote **50 more questions**, each with the tool the agent should use (or none, for things like "What's the weather?"), and checked which tool it actually called.
+
+| Right tool chosen | First run | After the fix |
+| :--- | :---: | :---: |
+| All answers | 89 of 100 | **50 of 50** |
+| Requests no tool covers (weather, trading, poems) | 8 of 18 | **9 of 9** |
+| Filing, price, watchlist and mixed requests | 81 of 82 | **41 of 41** |
+
+**What the first run found:** when no tool applied, the agent searched the filing anyway, even for "What is the capital of France?", because its instructions said to always search first.
+
+**What I changed:** the instructions now say to use a tool only when the request needs one, and otherwise to say what it can do. The same 50 questions now get the right tool every time.
+
 
 <details>
 <summary><b>▶️ How to run the evaluation (click to expand)</b></summary>
@@ -120,6 +134,7 @@ python preview_chunks.py                                   # saves the latest 10
 python run_eval.py --filing filing_AMZN.md                 # retrieval test only
 python run_eval.py --filing filing_AMZN.md --agent --runs 2  # also asks the agent every question and grades the answers
 python run_eval.py --filing filing_AMZN.md --agent --runs 2 --search vector  # same test with vector search only (default is hybrid)
+python run_eval.py --filing filing_AMZN.md --agent --skip-retrieval --questions eval_questions_AMZN_tools50.json  # which tool the agent picks
 ```
 
 The default search is hybrid. To compare search methods, add `--search vector`, `--search hybrid` or `--search keyword`; `--search all` runs the retrieval test for all three side by side.
