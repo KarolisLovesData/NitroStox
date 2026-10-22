@@ -8,6 +8,7 @@ price/indicator questions, watchlist requests and questions no tool can answer. 
 filing-only questions are still in eval_questions_AMZN.json:
 
   python run_eval.py --agent --filing filing_AMZN.md                 # 20 answers: the usual run
+  python run_eval.py --agent --skip-retrieval --filing filing_AMZN.md   # same, without the chunk search test
   python run_eval.py --agent --questions eval_questions_AMZN.json    # the original filing-only questions
 
   python run_eval.py --limit 3           # quick smoke test, retrieval only, first 3 questions
@@ -306,6 +307,9 @@ def main():
     ap.add_argument("--chunker", choices=["table", "fixed"], default="table",
                     help="table = header-keeping chunks the app now uses; fixed = the old 2,000-character windows "
                          "(run both to compare)")
+    ap.add_argument("--skip-retrieval", action="store_true",
+                    help="with --agent: skip the chunk search test and only run the agent "
+                         "(saves one round of embeddings)")
     ap.add_argument("--no-judge", action="store_true", help="skip the LLM judge (number check still runs)")
     ap.add_argument("--search", choices=SEARCH_MODES + ["all"], default="all",
                     help="search mode: vector, hybrid (keyword + vector, RRF) or keyword. "
@@ -326,14 +330,20 @@ def main():
     print(f"Filing: {args.filing} ({len(text):,} chars) | chunker={args.chunker} "
           f"chunk_size={chunk_size} overlap={overlap}")
 
-    rag, chunks, embeddings, bm25, n_total = build_index(args.ticker, text)
-    print(f"Index: {len(chunks)} of {n_total} chunks embedded (keyword index on the same chunks)")
-
     search_mode = "hybrid" if args.search == "all" else args.search  # used for the CSV and the agent
     modes = SEARCH_MODES if args.search == "all" else [args.search]
     filing_qs = [q for q in questions if "sec" in q.get("expected_tools", ["sec"])]
-    retr_by_mode = {m: retrieval_eval(rag, chunks, embeddings, bm25, filing_qs, mode=m) for m in modes}
-    retr = retr_by_mode[search_mode]
+    if args.skip_retrieval:
+        if not args.agent:
+            raise SystemExit("--skip-retrieval only makes sense together with --agent")
+        print("Retrieval test skipped: the agent builds its own search index.")
+        retr_by_mode, modes = {}, [search_mode]
+        retr = {}
+    else:
+        rag, chunks, embeddings, bm25, n_total = build_index(args.ticker, text)
+        print(f"Index: {len(chunks)} of {n_total} chunks embedded (keyword index on the same chunks)")
+        retr_by_mode = {m: retrieval_eval(rag, chunks, embeddings, bm25, filing_qs, mode=m) for m in modes}
+        retr = retr_by_mode[search_mode]
 
     # Summary over answerable questions that have a snippet
     scored = [q for q in filing_qs if q.get("answerable") is True and q.get("evidence_snippet")]
