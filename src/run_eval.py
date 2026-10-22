@@ -1,7 +1,14 @@
 """NitroStox SEC-RAG evaluation runner.
 
 Put this file in your NitroStox project folder, next to sec_rag.py,
-upgraded_nitrostox.py, filing_AMZN.txt and eval_questions_AMZN.json.
+upgraded_nitrostox.py, filing_AMZN.txt and the eval question files.
+
+The default question set is eval_questions_AMZN_tools.json: 20 questions mixing filing questions,
+price/indicator questions, watchlist requests and questions no tool can answer. The original 20
+filing-only questions are still in eval_questions_AMZN.json:
+
+  python run_eval.py --agent --filing filing_AMZN.md                 # 20 answers: the usual run
+  python run_eval.py --agent --questions eval_questions_AMZN.json    # the original filing-only questions
 
   python run_eval.py --limit 3           # quick smoke test, retrieval only, first 3 questions
   python run_eval.py                     # retrieval test on all questions
@@ -23,8 +30,10 @@ What it measures
      contains your evidence_snippet in the top 3 / top 5? Reported strict (primary snippet
      only) and lenient (primary or alt_snippets). The CSV also lists the top-5 chunk ids.
   B. Agent (with --agent): the question goes through run_gemini_agent, the same path a
-     user takes. The script records the answer, whether the agent called the SEC tool,
+     user takes. The script records the answer, which tools the agent called,
      and whether the chunks it received contained your snippet. Each answer is then graded:
+       - tool choice: did the agent call exactly the tools in the question's expected_tools
+         (filing search, signals table, watchlist, or none)? Reported as % of correct choices.
        - number check: numbers in the answer that do not appear in the tool output
        - citation check: every [chunk N] the answer cites was really retrieved, every sentence
          with a number has a citation, and those numbers are in the chunk it cites. Also: does a
@@ -181,6 +190,16 @@ def retrieval_eval(rag, chunks, embeddings, bm25, questions, mode="hybrid"):
     return results
 
 
+def tool_choice(expected, calls):
+    """True when the agent called exactly the expected tools (order and repeats ignored).
+
+    expected is the question's expected_tools list ([] = no tool); None when the question has none.
+    """
+    if expected is None:
+        return None
+    return {c["tool"] for c in calls} == set(expected)
+
+
 def setup_agent(ticker: str, text: str):
     """Import the app module and pin it to the saved filing. Returns (module, call_log).
 
@@ -257,9 +276,14 @@ def setup_agent(ticker: str, text: str):
 
     @functools.wraps(original_watch)
     def logged_watch(ticker: str, action: str) -> str:
-        # Never touch the real watchlist from an eval run
-        call_log.append({"tool": "watchlist", "ticker": ticker, "action": action, "output": "(blocked in eval)"})
-        return f"Eval mode: watchlist {action} for {ticker} was not executed."
+        # Never touch the real watchlist from an eval run. Reply like the real tool, so the
+        # answer and the judge read normally, and mark the call as not executed in the trace.
+        done = {"ADD": "added {} to", "REMOVE": "removed {} from"}.get(str(action).upper().strip())
+        out = (f"Successfully {done.format(str(ticker).upper().strip())} BigQuery watchlist." if done
+               else f"Invalid action '{action}'. Action must be 'ADD' or 'REMOVE'.")
+        call_log.append({"tool": "watchlist", "ticker": ticker, "action": action, "output": out,
+                         "executed": False})
+        return out
 
     nx.tool_query_sec_filings = logged_sec
     nx.tool_get_technical_signals = logged_tech
@@ -269,7 +293,9 @@ def setup_agent(ticker: str, text: str):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--questions", default="eval_questions_AMZN.json")
+    ap.add_argument("--questions", default="eval_questions_AMZN_tools.json",
+                    help="question file. Default: the 20-question tool-choice set. "
+                         "eval_questions_AMZN.json is the original 20 filing-only questions.")
     ap.add_argument("--filing", default="filing_AMZN.txt")
     ap.add_argument("--ticker", default="AMZN")
     ap.add_argument("--agent", action="store_true", help="also run every question through the agent")
@@ -305,11 +331,12 @@ def main():
 
     search_mode = "hybrid" if args.search == "all" else args.search  # used for the CSV and the agent
     modes = SEARCH_MODES if args.search == "all" else [args.search]
-    retr_by_mode = {m: retrieval_eval(rag, chunks, embeddings, bm25, questions, mode=m) for m in modes}
+    filing_qs = [q for q in questions if "sec" in q.get("expected_tools", ["sec"])]
+    retr_by_mode = {m: retrieval_eval(rag, chunks, embeddings, bm25, filing_qs, mode=m) for m in modes}
     retr = retr_by_mode[search_mode]
 
     # Summary over answerable questions that have a snippet
-    scored = [q for q in questions if q.get("answerable") is True and q.get("evidence_snippet")]
+    scored = [q for q in filing_qs if q.get("answerable") is True and q.get("evidence_snippet")]
     n = len(scored)
 
     for m, rm in retr_by_mode.items():
@@ -361,6 +388,9 @@ def main():
                 for line in f:
                     if line.strip():
                         rec = json.loads(line)
+                        if "tool_ok" not in rec:  # trace from before tool choice was recorded
+                            exp = next((q.get("expected_tools") for q in questions if q["id"] == rec["id"]), None)
+                            rec["expected_tools"], rec["tool_ok"] = exp, tool_choice(exp, rec.get("tool_calls", []))
                         agent_rows[(rec["id"], rec["run"])] = rec
             # Answers that were API errors, or whose judge call failed, are not finished: redo them
             bad = [k for k, r in agent_rows.items()
@@ -404,6 +434,7 @@ def main():
                             raise RuntimeError(f"Gemini failed {failures} answers in a row; try again later with --resume")
                         continue
                     calls = list(call_log)
+                    tool_ok = tool_choice(q.get("expected_tools"), calls)
                     sec_calls = [c for c in calls if c["tool"] == "sec"]
                     tool_text = "\n\n".join(c["output"] for c in calls)
                     retrieved = norm(" ".join(c["output"] for c in sec_calls))
@@ -432,6 +463,8 @@ def main():
                         "id": q["id"], "category": q["category"], "answerable": q["answerable"],
                         "called": bool(sec_calls),
                         "tools": " ".join(c["tool"] for c in calls),
+                        "expected_tools": q.get("expected_tools"),
+                        "tool_ok": tool_ok,
                         "queries": " | ".join(c["query"] for c in sec_calls),
                         "chunk_ids": " ".join(str(h["chunk_index"]) for h in chunk_hits),
                         "chunk_scores": " ".join(f"{h['score']:.3f}" for h in chunk_hits),
@@ -455,7 +488,10 @@ def main():
                     flag += "" if cites["ok"] else (f" citation problems: {len(cites['invalid'])} invalid, "
                                                     f"{len(cites['uncited_claims'])} uncited, "
                                                     f"{len(cites['unsupported'])} not in cited chunk")
-                    print(f"  {q['id']} run {run}: sec_tool={'yes' if sec_calls else 'NO'} "
+                    used = " ".join(dict.fromkeys(c["tool"] for c in calls)) or "none"
+                    want = (" ".join(q["expected_tools"]) or "none") if q.get("expected_tools") is not None else "?"
+                    pick = "" if tool_ok is None else (" ok" if tool_ok else " WRONG")
+                    print(f"  {q['id']} run {run}: tools={used} (expected {want}){pick} "
                           f"chunks=[{row['chunk_ids']}] judge={grade}{flag}")
                     time.sleep(1.5)
 
@@ -480,7 +516,7 @@ def main():
     out_path = f"eval_results_{stamp}_{search_mode}.csv"
     fields = ["run_at", "search_mode", "id", "category", "answerable", "question", "expected_answer",
               "rank_strict", "rank_lenient", "hit_at_3_lenient", "hit_at_5_lenient", "top5_chunk_ids",
-              "run", "agent_tools_called", "agent_called_sec_tool", "agent_search_queries",
+              "run", "expected_tools", "agent_tools_called", "tool_choice_ok", "agent_called_sec_tool", "agent_search_queries",
               "agent_chunk_ids", "agent_chunk_scores", "agent_chunks_contain_snippet",
               "agent_answer", "unsupported_numbers", "citations", "citations_ok", "invalid_citations",
               "uncited_claims", "numbers_not_in_cited_chunk", "cited_chunks_contain_evidence", "rewritten",
@@ -491,7 +527,7 @@ def main():
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         for q in questions:
-            r = retr[q["id"]]
+            r = retr.get(q["id"]) or {"rank_strict": None, "rank_lenient": None, "has_snippet": False, "top_ids": []}
             base = {
                 "run_at": stamp, "search_mode": search_mode, "id": q["id"], "category": q["category"], "answerable": q["answerable"],
                 "question": q["question"], "expected_answer": q.get("expected_answer") or "",
@@ -508,7 +544,10 @@ def main():
                         continue
                     j = a["judge"] or {}
                     ct = a.get("citations") or {}  # absent in traces from before citations were added
+                    exp = a.get("expected_tools", q.get("expected_tools"))
                     w.writerow({**base, "run": run, "agent_tools_called": a["tools"],
+                                "expected_tools": "" if exp is None else (" ".join(exp) or "none"),
+                                "tool_choice_ok": "" if a.get("tool_ok") is None else a["tool_ok"],
                                 "agent_called_sec_tool": a["called"],
                                 "agent_search_queries": a["queries"],
                                 "agent_chunk_ids": a["chunk_ids"], "agent_chunk_scores": a["chunk_scores"],
