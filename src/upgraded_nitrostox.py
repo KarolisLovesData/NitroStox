@@ -892,6 +892,7 @@ def _analyzer_for(ticker: str) -> "StockAnalyzer":
     return _ANALYZERS.get(t) or StockAnalyzer(t)
 
 
+AGENT_MODEL = os.getenv("NITROSTOX_AGENT_MODEL", "gemini-3.7-flash")  # run_eval.py --agent-model sets this
 AGENT_TOP_K = 5  # the 2026-10-04 eval found the evidence in the top 5 far more often than the top 3
 
 
@@ -1052,7 +1053,7 @@ def run_gemini_agent_detailed(user_prompt: str, active_ticker: str = "AAPL",
         sources: dict = {}
         calls: list = []
         chat = client.chats.create(
-            model="gemini-3.7-flash",
+            model=AGENT_MODEL,
             config={
                 "tools": _recording_tools(sources, calls),
                 "system_instruction": system_instruction,

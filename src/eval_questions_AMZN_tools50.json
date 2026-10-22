@@ -1,0 +1,509 @@
+{
+  "_instructions": [
+    "50-question set to compare changes (a new model, a new prompt). The first 20 are the same as eval_questions_AMZN_tools.json.",
+    "The 30 questions with tool_only: true have no expected answer: only the tool choice is measured, and the judge is skipped for them.",
+    "expected_tools: sec = filing search, technical = BigQuery signals table, watchlist = watchlist tool, [] = no tool (the agent should decline). Tool choice is right when the set of tools the agent called equals this list.",
+    "Run it with --runs 2 or 3: the agent does not answer the same way every time."
+  ],
+  "filing": {
+    "ticker": "AMZN",
+    "form": "10-Q",
+    "period": "quarter ended June 30, 2026 (Q2 2026)",
+    "commission_file_no": "001-43202",
+    "accession": "TO_FILL (printed by save_filing.py)",
+    "source_file": "filing_AMZN.txt",
+    "note": "Pin this exact file. The app fetches the latest filing, so live results change when a new one is filed."
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "What was total revenue for the quarter, and how did it compare with the same quarter last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Total net sales were $200,606 million in Q2 2026 versus $167,702 million in Q2 2025, an increase of 20%.",
+      "evidence_snippet": "Sales increased 20% in Q2 2026, and 18% for the six months ended June 30, 2026 compared to the comparable prior year periods.",
+      "alt_snippets": [
+        "Total net sales 167,702 200,606 323,369 382,125",
+        "Consolidated $ 167,702 $ 200,606 $ 323,369 $"
+      ]
+    },
+    {
+      "id": "q02",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "What was net income for the quarter?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Net income was $62,647 million in Q2 2026 versus $18,164 million in Q2 2025.",
+      "evidence_snippet": "Net income $ 18,164 62,647 $ 35,291 $ 92,902",
+      "note": "Most of the increase comes from other income (expense), net of $53.4 billion, mainly upward adjustments to the Anthropic investment (see MD&A, Other Income). A good answer should not present it as operating improvement."
+    },
+    {
+      "id": "q04",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "How did operating expenses change compared with the same quarter last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Total operating expenses were $173,145 million in Q2 2026 versus $148,531 million in Q2 2025 (about 17% higher; computed, the filing gives growth by line: cost of sales +19%, fulfillment +14%, technology and infrastructure +22%, sales and marketing +2%, general and administrative -6%).",
+      "evidence_snippet": "Total operating expenses 148,531 173,145 285,793 330,812",
+      "note": "The 17% total is computed from the two figures; the filing does not state it."
+    },
+    {
+      "id": "q07",
+      "category": "factual",
+      "pillar": "4 Strategic Shifts & Macro",
+      "question": "How much did the company spend on share repurchases and dividends in the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Nothing on repurchases: there were no repurchases of common stock in the six months ended June 30, 2025 or 2026, and $6.1 billion remained under the repurchase authorization. The filing reports no dividend payments.",
+      "evidence_snippet": "There were no repurchases of our common stock during the six months ended June 30, 2025 or 2026.",
+      "note": "'Pay dividends' appears only in a generic list of capital actions the company may consider. A good answer says zero for repurchases and that no dividends are reported, not that it paid them."
+    },
+    {
+      "id": "q08",
+      "category": "factual",
+      "pillar": "4 Strategic Shifts & Macro",
+      "question": "Which segment or product line grew fastest, and by how much?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "AWS grew fastest: net sales rose 37% in Q2 2026 ($42,232 million versus $30,873 million). North America grew 16% and International 15%.",
+      "evidence_snippet": "AWS sales increased 37% in Q2 2026, and 33% for the six months ended June 30, 2026 compared to the comparable prior year periods.",
+      "alt_snippets": [
+        "AWS 30,873 42,232 60,140"
+      ]
+    },
+    {
+      "id": "q10",
+      "category": "forward_looking",
+      "pillar": "1 Future Guidance",
+      "question": "Does the filing give specific guidance on future revenue or earnings? If so, what is it?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Yes. Third Quarter 2026 guidance (given July 30, 2026): net sales of $197.0 billion to $202.0 billion, growth of 9% to 12% versus Q3 2025 (nearly 400 basis points higher excluding Prime Day timing; assumes about 80 basis points of unfavorable foreign exchange), and operating income of $22.5 billion to $26.5 billion versus $17.4 billion in Q3 2025.",
+      "evidence_snippet": "Net sales are expected to be between $197.0 billion and $202.0 billion",
+      "note": "CORRECTED. First version said the filing gives no numeric guidance; that was wrong. It has a 'Guidance' section with Q3 2026 ranges. The retrieval results exposed the error (the guidance chunk ranked first).",
+      "alt_snippets": [
+        "Operating income is expected to be between $22.5 billion and $26.5 billion"
+      ]
+    },
+    {
+      "id": "q12",
+      "category": "risk",
+      "pillar": "5 Red Flags & Risks",
+      "question": "What does the filing say about foreign exchange or currency risk?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "International was 21% of consolidated revenue in Q2 2026, and results of international stores and AWS are exposed to exchange-rate fluctuations. Exchange rates did not significantly affect Q2 net sales but increased net sales by $3.0 billion for the six months ended June 30, 2026.",
+      "evidence_snippet": "Changes in foreign exchange rates did not significantly impact net sales for Q2 2026, but increased net sales by $3.0 billion for the six months ended June 30, 2026.",
+      "alt_snippets": [
+        "During Q2 2026, net sales from our International segment accounted for 21% of our consolidated revenues."
+      ]
+    },
+    {
+      "id": "q14",
+      "category": "risk",
+      "pillar": "5 Red Flags & Risks",
+      "question": "Are any legal proceedings or contingent liabilities disclosed?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Yes. Part II, Item 1 describes: Illinois biometric-privacy litigation (Wilcosky v. Amazon.com, Hogan v. Amazon.com); cases filed since March 2020 by private litigants, state Attorneys General, and the FTC alleging, among other things, price-fixing arrangements; two complaints filed by Xockets, Inc. in June 2025 against Amazon.com and AWS; and regular patent and other claims. It states outcomes are inherently unpredictable. Tax disputes (including with the Indian tax authority) are also described in the notes.",
+      "evidence_snippet": "Beginning in June 2019 with Wilcosky v. Amazon.com, Inc., now pending in the United States District Court for the Northern District of Illinois",
+      "note": "Expected answer was built from the opening of each paragraph; read the full section before using it to grade detailed answers."
+    },
+    {
+      "id": "q03",
+      "category": "factual",
+      "pillar": "2 Profit Margins & Cost Pressures",
+      "question": "What was the gross margin percentage, and what does the filing say drove the change?",
+      "answerable": false,
+      "expected_tools": ["sec"],
+      "expected_answer": null,
+      "evidence_snippet": "We believe that operating income is a more meaningful measure than gross profit and gross margin due to the diversity of our product categories and services.",
+      "note": "The filing does not report gross margin. A model could derive one from net sales and cost of sales, but that is calculated, not retrieved. Correct behavior: say it is not reported (optionally offer operating income: $27,461 million vs $19,171 million). Consider swapping this question for an operating-income question if you want 9 plain lookups."
+    },
+    {
+      "id": "q17",
+      "category": "unanswerable",
+      "pillar": "all",
+      "question": "What was the CEO's total compensation for the year?",
+      "answerable": false,
+      "expected_tools": ["sec"],
+      "expected_answer": null,
+      "evidence_snippet": null,
+      "note": "No executive compensation in the filing; the CEO's name appears only on the signature page."
+    },
+    {
+      "id": "t01",
+      "category": "technical",
+      "question": "What is the current stock price?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "expected_answer": "The latest Close_Price from the signals table, with its date, cited [signals].",
+      "evidence_snippet": null,
+      "note": "Comes from the live BigQuery signals table, so there is no fixed value. Grade against the tool output."
+    },
+    {
+      "id": "t02",
+      "category": "technical",
+      "question": "Is the 7-day moving average above the 60-day moving average?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "expected_answer": "Compares the latest MA_7 with MA_60 from the signals table and says which is higher, cited [signals].",
+      "evidence_snippet": null,
+      "note": "Comes from the live BigQuery signals table, so there is no fixed value. Grade against the tool output."
+    },
+    {
+      "id": "t03",
+      "category": "technical",
+      "question": "What is the latest 14-day RSI, and does it point to overbought or oversold?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "expected_answer": "The latest RSI_14 value from the signals table; above 70 is overbought, below 30 oversold, otherwise neither. Cited [signals].",
+      "evidence_snippet": null,
+      "note": "Comes from the live BigQuery signals table, so there is no fixed value. Grade against the tool output."
+    },
+    {
+      "id": "t04",
+      "category": "technical",
+      "question": "Is recent trading volume higher or lower than the 20-day average?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "expected_answer": "Compares the latest Volume with Avg_Vol_20 (or reads Volume_Deviation) from the signals table, cited [signals].",
+      "evidence_snippet": null,
+      "note": "Comes from the live BigQuery signals table, so there is no fixed value. Grade against the tool output."
+    },
+    {
+      "id": "w01",
+      "category": "watchlist",
+      "question": "Add AMZN to my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "expected_answer": "Confirms AMZN was added to the watchlist.",
+      "evidence_snippet": null,
+      "note": "In the eval the watchlist is not really changed; the tool still replies as if it were."
+    },
+    {
+      "id": "w02",
+      "category": "watchlist",
+      "question": "Remove AMZN from my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "expected_answer": "Confirms AMZN was removed from the watchlist.",
+      "evidence_snippet": null,
+      "note": "In the eval the watchlist is not really changed; the tool still replies as if it were."
+    },
+    {
+      "id": "w03",
+      "category": "watchlist",
+      "question": "Please keep an eye on NVDA for me by putting it on my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "expected_answer": "Confirms NVDA (not the selected ticker AMZN) was added to the watchlist.",
+      "evidence_snippet": null,
+      "note": "Tests that the agent uses the ticker the user names, not the selected one."
+    },
+    {
+      "id": "m01",
+      "category": "mixed",
+      "question": "What was net income for the quarter, and what is the current RSI?",
+      "answerable": true,
+      "expected_tools": ["sec", "technical"],
+      "expected_answer": "Net income was $62,647 million in Q2 2026 (cited to a filing chunk), and the latest RSI_14 from the signals table (cited [signals]).",
+      "evidence_snippet": "Net income $ 18,164 62,647 $ 35,291 $ 92,902",
+      "note": "Needs both the filing search and the signals table."
+    },
+    {
+      "id": "n01",
+      "category": "out_of_scope",
+      "question": "What's the weather in Seattle today?",
+      "answerable": false,
+      "expected_tools": [],
+      "expected_answer": null,
+      "evidence_snippet": null,
+      "note": "No tool covers this. Correct: decline without calling a tool."
+    },
+    {
+      "id": "n02",
+      "category": "out_of_scope",
+      "question": "Buy 10 shares of AMZN for me.",
+      "answerable": false,
+      "expected_tools": [],
+      "expected_answer": null,
+      "evidence_snippet": null,
+      "note": "The app cannot place trades. Correct: say so without calling a tool (the watchlist is not a trade)."
+    },
+    {
+      "id": "a01",
+      "category": "technical",
+      "question": "Is AMZN trending up or down lately?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true,
+      "note": "No indicator keyword in the question."
+    },
+    {
+      "id": "a02",
+      "category": "technical",
+      "question": "Did AMZN break out recently?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true,
+      "note": "No indicator keyword in the question."
+    },
+    {
+      "id": "a03",
+      "category": "technical",
+      "question": "Is the stock overbought right now?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true,
+      "note": "Means RSI; the word is not used."
+    },
+    {
+      "id": "a04",
+      "category": "technical",
+      "question": "How much did the stock move at the last close?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true,
+      "note": "Price move, not a filing question."
+    },
+    {
+      "id": "a05",
+      "category": "technical",
+      "question": "Is the stock above or below its 60-day average?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "a06",
+      "category": "technical",
+      "question": "Is trading volume unusually high lately?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true,
+      "note": "'Volume' also appears in the filing; the question is about trading."
+    },
+    {
+      "id": "a07",
+      "category": "technical",
+      "question": "Give me the latest closing price and the RSI.",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "f01",
+      "category": "filing",
+      "question": "What risks does the filing mention that could affect the company's stock price?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true,
+      "note": "Contains 'stock price' but asks about the filing."
+    },
+    {
+      "id": "f02",
+      "category": "filing",
+      "question": "What did management say about AWS growth?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "f03",
+      "category": "filing",
+      "question": "How much did the company spend on capital expenditures this quarter?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "f04",
+      "category": "filing",
+      "question": "What does the filing say about the company's total debt?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "f05",
+      "category": "filing",
+      "question": "Does the filing mention any acquisitions?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "f06",
+      "category": "filing",
+      "question": "How many shares of common stock were outstanding?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true,
+      "note": "Contains 'shares' but is a filing question."
+    },
+    {
+      "id": "f07",
+      "category": "filing",
+      "question": "How did international segment sales change?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "w04",
+      "category": "watchlist",
+      "question": "Stop tracking AMZN.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true,
+      "note": "Remove, without the word watchlist."
+    },
+    {
+      "id": "w05",
+      "category": "watchlist",
+      "question": "Can you track TSLA for me?",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true,
+      "note": "Add, without the word watchlist; ticker differs from the selected one."
+    },
+    {
+      "id": "w06",
+      "category": "watchlist",
+      "question": "Drop NVDA from my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "w07",
+      "category": "watchlist",
+      "question": "Remove NVDA from my watchlist and add AMD.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true,
+      "note": "Two watchlist actions."
+    },
+    {
+      "id": "w08",
+      "category": "watchlist",
+      "question": "Is AMZN on my watchlist?",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "No tool can read the watchlist. Correct: say so without calling a tool."
+    },
+    {
+      "id": "m02",
+      "category": "mixed",
+      "question": "Give me the revenue growth from the filing and tell me if the stock is in an uptrend.",
+      "answerable": true,
+      "expected_tools": ["sec", "technical"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "m03",
+      "category": "mixed",
+      "question": "Add AMZN to my watchlist and summarize the Q3 guidance.",
+      "answerable": true,
+      "expected_tools": ["watchlist", "sec"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "m04",
+      "category": "mixed",
+      "question": "Add AMZN to my watchlist and tell me its latest RSI.",
+      "answerable": true,
+      "expected_tools": ["watchlist", "technical"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "m05",
+      "category": "mixed",
+      "question": "What was net income, and is the stock above its 60-day average?",
+      "answerable": true,
+      "expected_tools": ["sec", "technical"],
+      "tool_only": true,
+      "note": ""
+    },
+    {
+      "id": "n03",
+      "category": "out_of_scope",
+      "question": "What is the capital of France?",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "No tool covers this."
+    },
+    {
+      "id": "n04",
+      "category": "out_of_scope",
+      "question": "Write a short poem about Amazon.",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "No tool needed."
+    },
+    {
+      "id": "n05",
+      "category": "out_of_scope",
+      "question": "Hi! What can you do?",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "Answer about itself, no tool needed."
+    },
+    {
+      "id": "n06",
+      "category": "out_of_scope",
+      "question": "Sell my AMZN shares.",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "The app cannot trade."
+    },
+    {
+      "id": "n07",
+      "category": "out_of_scope",
+      "question": "Translate 'good morning' into Spanish.",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "No tool covers this."
+    },
+    {
+      "id": "n08",
+      "category": "out_of_scope",
+      "question": "Can you email me this summary?",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "The app cannot send email."
+    },
+    {
+      "id": "n09",
+      "category": "out_of_scope",
+      "question": "What's a good recipe for dinner?",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "No tool covers this."
+    }
+  ]
+}
