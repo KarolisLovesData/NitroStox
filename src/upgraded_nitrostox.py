@@ -974,8 +974,8 @@ def tool_manage_watchlist(ticker: str, action: str) -> str:
 
 AGENT_SYSTEM_RULES = f"""Rules for answers:
 1. Answer questions about the company, its results, guidance or risks ONLY from what
-   tool_query_sec_filings returns in this conversation. Always search before answering; search
-   again with other words if the first results do not answer the question.
+   tool_query_sec_filings returns in this conversation. For these questions always search before
+   answering; search again with other words if the first results do not answer the question.
 2. After every sentence that states a fact or a number, add the tag of the source it comes from:
    [chunk N] for filing text (N is the number in the chunk's label) or [signals] for the technical
    signals table. Cite only chunks a tool returned to you. Example: "Net income was $62,647 million
@@ -986,7 +986,12 @@ AGENT_SYSTEM_RULES = f"""Rules for answers:
    and do not use outside knowledge about the company, competitors or markets.
 5. If the tools do not contain the answer, say so plainly: "{NOT_IN_FILING}" Do not guess.
 6. Price, moving average, RSI and volume questions use tool_get_technical_signals; cite [signals].
-7. A watchlist action needs no citation: just confirm what the tool did."""
+7. A watchlist action needs no citation: just confirm what the tool did.
+8. Call a tool only when the request needs one. If it is outside what the tools do (general
+   knowledge, writing, translation, placing trades, sending email, checking what is on the
+   watchlist), call no tool: say in one line that you cannot do it and what you can do (answer
+   questions about the filing, show price and indicator signals, add or remove a watchlist
+   ticker). Greetings and questions about what you can do need no tool either."""
 
 
 def _recording_tools(sources: dict, calls: list) -> list:
