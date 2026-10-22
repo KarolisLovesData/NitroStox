@@ -10,6 +10,9 @@ filing-only questions are still in eval_questions_AMZN.json:
   python run_eval.py --agent --filing filing_AMZN.md                 # 20 answers: the usual run
   python run_eval.py --agent --skip-retrieval --filing filing_AMZN.md   # same, without the chunk search test
   python run_eval.py --agent --questions eval_questions_AMZN.json    # the original filing-only questions
+  python run_eval.py --agent --runs 2 --skip-retrieval --questions eval_questions_AMZN_tools50.json
+                                                                     # 50 questions for comparing changes (30 judge-free)
+  python run_eval.py --agent --agent-model <gemini model> ...         # same run with another agent model
 
   python run_eval.py --limit 3           # quick smoke test, retrieval only, first 3 questions
   python run_eval.py                     # retrieval test on all questions
@@ -307,6 +310,9 @@ def main():
     ap.add_argument("--chunker", choices=["table", "fixed"], default="table",
                     help="table = header-keeping chunks the app now uses; fixed = the old 2,000-character windows "
                          "(run both to compare)")
+    ap.add_argument("--agent-model", default="",
+                    help="Gemini model the agent uses (default: the app's own, gemini-3.7-flash). "
+                         "Run the same questions with two models to compare their tool choice.")
     ap.add_argument("--skip-retrieval", action="store_true",
                     help="with --agent: skip the chunk search test and only run the agent "
                          "(saves one round of embeddings)")
@@ -318,6 +324,8 @@ def main():
                     help="model for the LLM judge. claude-* uses ANTHROPIC_API_KEY; gemini-* uses GEMINI_API_KEY. "
                          "Default is a Claude model so the judge is not the same model family as the agent.")
     args = ap.parse_args()
+    if args.agent_model:
+        os.environ["NITROSTOX_AGENT_MODEL"] = args.agent_model  # read when upgraded_nitrostox is imported
 
     mode = f"retrieval + agent ({args.runs} run(s) per question)" if args.agent else "retrieval ONLY (add --agent to also ask the agent)"
     print(f"MODE: {mode}")
@@ -458,7 +466,7 @@ def main():
                     cited_text = norm(" ".join(sources[c] for c in cites["cited"] if c in sources))
                     cited_evidence = (any(sn in cited_text for sn in snips) if snips else None)
                     judge = None
-                    if judge_client:
+                    if judge_client and not q.get("tool_only"):  # tool_only questions have no expected answer to grade
                         judge = judge_answer(judge_client, args.judge_model, q, answer, tool_text)
                         time.sleep(1.0)
                         if "judge_error" in judge:
@@ -517,6 +525,7 @@ def main():
         with open(summary_path, "w", encoding="utf-8") as f:
             json.dump({"run_at": stamp, "filing": args.filing, "runs": args.runs, "search_mode": search_mode,
                        "chunker": args.chunker,
+                       "agent_model": args.agent_model or getattr(nx, "AGENT_MODEL", "default"),
                        "judge_model": None if args.no_judge else args.judge_model,
                        "complete": not stopped_early, "answers_finished": len(agent_rows),
                        "answers_expected": len(questions) * args.runs, **summary}, f, indent=2)
