@@ -72,11 +72,11 @@ def number_check(answer: str, source_text: str) -> dict:
     return {"numbers_checked": checked, "unsupported_numbers": unsupported}
 
 
-JUDGE_PROMPT = """You are grading an answer from a financial research agent that answers questions about one SEC filing.
+JUDGE_PROMPT = """You are grading an answer from a financial research agent. It answers from one SEC filing, a technical signals table (price, moving averages, RSI, volume) and a watchlist tool.
 Use ONLY the TOOL OUTPUT below as the source of truth for what the agent saw. EXPECTED ANSWER and GRADER NOTE come from a human who read the filing.
 
 QUESTION: {question}
-ANSWERABLE FROM THE FILING: {answerable}
+ANSWERABLE WITH THE AGENT'S TOOLS: {answerable}
 EXPECTED ANSWER: {expected}
 GRADER NOTE: {note}
 
@@ -91,10 +91,10 @@ AGENT ANSWER:
 >>>
 
 Grade it and return JSON with exactly these keys:
-- "correctness": for an answerable question one of "correct", "partial", "incorrect", "declined"; for a question that is not answerable one of "declined" (it says the information is not in the filing) or "answered" (it gives an answer anyway).
+- "correctness": for an answerable question one of "correct", "partial", "incorrect", "declined"; for a question that is not answerable one of "declined" (it says it does not have the information or cannot do it) or "answered" (it gives an answer anyway).
 - "grounded": true if every factual claim and number in the answer is stated in the tool output; false if anything comes from outside knowledge or is calculated and presented as reported.
 - "period_error": true if any figure is attributed to the wrong period (for example last year's value given as this quarter's).
-- "citations_supported": the tool output labels each chunk "[chunk N]". true if every citation tag in the answer points at a chunk that states the claim it is attached to and every factual sentence has one; false otherwise (also false for an answer with factual claims and no citations; true for a plain refusal).
+- "citations_supported": the tool output labels each filing chunk "[chunk N]" and the signals table "[signals]". true if every citation tag in the answer points at a chunk that states the claim it is attached to and every factual sentence has one; false otherwise (also false for an answer with factual claims and no citations; true for a plain refusal or a watchlist confirmation).
 - "unsupported_claims": list of short strings, each a claim or number not supported by the tool output (empty list if none).
 - "reason": one sentence explaining the grade.
 """
@@ -105,7 +105,7 @@ def judge_answer(client, model: str, q: dict, answer: str, tool_output: str,
     prompt = JUDGE_PROMPT.format(
         question=q["question"],
         answerable="yes" if q.get("answerable") else "no",
-        expected=q.get("expected_answer") or "(none: the filing does not contain this)",
+        expected=q.get("expected_answer") or "(none: the agent should decline)",
         note=q.get("note") or "(none)",
         tool_output=(tool_output or "(the agent called no tools)")[:max_tool_chars],
         answer=answer,
@@ -138,6 +138,10 @@ def summarize(rows: list[dict]) -> dict:
         if not rs:
             return out
         answerable = [r for r in rs if r["answerable"] is True]
+        picked = [r for r in rs if r.get("tool_ok") is not None]
+        if picked:
+            ok = sum(bool(r["tool_ok"]) for r in picked)
+            out["tool_choice_correct"] = f"{ok}/{len(picked)} ({100 * ok / len(picked):.0f}%)"
         out["sec_tool_called"] = sum(r["called"] for r in rs)
         with_snip = [r for r in answerable if r["snippet_in_chunks"] is not None]
         if with_snip:
