@@ -13,6 +13,8 @@ filing-only questions are still in eval_questions_AMZN.json:
   python run_eval.py --agent --runs 2 --skip-retrieval --questions eval_questions_AMZN_tools50.json
                                                                      # 50 questions for comparing changes (30 judge-free)
   python run_eval.py --agent --agent-model <gemini model> ...         # same run with another agent model
+  python run_eval.py --agent --skip-retrieval --no-judge --from-store --ticker MSFT --questions eval_questions_standard.json
+                                         # any company stored by ingest_filings.py (eval_companies.py runs several)
 
   python run_eval.py --limit 3           # quick smoke test, retrieval only, first 3 questions
   python run_eval.py                     # retrieval test on all questions
@@ -59,7 +61,9 @@ CSV and the agent use hybrid.
 
 The agent test is pinned to your saved filing: StockAnalyzer is patched in this process
 only, so it reads the saved filing instead of fetching the latest filing from EDGAR.
-Your source files are not modified.
+Your source files are not modified. With --from-store it reads the filing ingest_filings.py
+stored for --ticker instead, with the vectors already saved there (no chunk embedding calls).
+"{ticker}" in a question is replaced with --ticker, so one question file fits every company.
 
 Needs GEMINI_API_KEY in .env. --agent also needs the GCP credentials the app already uses.
 """
@@ -128,13 +132,32 @@ def norm(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
-def load_inputs(questions_path: str, filing_path: str):
+def load_inputs(questions_path: str, filing_path: str, ticker: str = "AMZN"):
     with open(questions_path, encoding="utf-8") as f:
         spec = json.load(f)
+    for q in spec["questions"]:  # company-neutral question sets write {ticker}
+        for k in ("question", "expected_answer"):
+            if isinstance(q.get(k), str):
+                q[k] = q[k].replace("{ticker}", ticker)
+    if filing_path is None:
+        return spec, None
     # Default newline handling matches what the app sees (text with \n line breaks).
     with open(filing_path, encoding="utf-8") as f:
         text = f.read()
     return spec, text
+
+
+def load_stored(ticker: str):
+    """(text, chunks, matrix, entry) of the filing ingest_filings.py stored for this ticker."""
+    import filing_store
+    entry = filing_store.latest(ticker)
+    if not entry:
+        raise SystemExit(f"No stored filing for {ticker}. Run first:  python ingest_filings.py --tickers {ticker}")
+    if entry.get("embed_model") != sec_rag.EMBED_MODEL:
+        raise SystemExit(f"{ticker} was stored with {entry.get('embed_model')}; the app now uses "
+                         f"{sec_rag.EMBED_MODEL}. Run:  python ingest_filings.py --force --tickers {ticker}")
+    records, matrix = filing_store.load(entry)
+    return filing_store.load_text(entry), [r["text"] for r in records], matrix.astype(np.float32), entry
 
 
 def build_index(ticker: str, text: str):
@@ -204,7 +227,7 @@ def tool_choice(expected, calls):
     return {c["tool"] for c in calls} == set(expected)
 
 
-def setup_agent(ticker: str, text: str):
+def setup_agent(ticker: str, text: str, prebuilt=None):
     """Import the app module and pin it to the saved filing. Returns (module, call_log).
 
     call_log gets one entry per tool call the agent makes. SEC entries include the chunk
@@ -212,13 +235,17 @@ def setup_agent(ticker: str, text: str):
 
     The app caches the knowledge base per ticker (_KB_CACHE), so only the part that
     downloads the filing is replaced; the filing is embedded once and reused.
+    prebuilt = (chunks, matrix) uses those vectors instead of embedding the text (--from-store).
     """
     import upgraded_nitrostox as nx
 
     def pinned_build_uncached(self):
-        rag = SECVectorRAG(self.ticker)
-        raw_chunks = rag.chunk_text(text)
-        raw_embeddings = rag.embed_chunks(raw_chunks)
+        if prebuilt is not None:
+            raw_chunks, raw_embeddings = prebuilt
+        else:
+            rag = SECVectorRAG(self.ticker)
+            raw_chunks = rag.chunk_text(text)
+            raw_embeddings = rag.embed_chunks(raw_chunks)
         pairs = [(c, e) for c, e in zip(raw_chunks, raw_embeddings) if e is not None and len(e) > 0]
         if not pairs:
             print("Pinned build failed: no embeddings (quota?).")
@@ -302,6 +329,8 @@ def main():
                          "eval_questions_AMZN.json is the original 20 filing-only questions.")
     ap.add_argument("--filing", default="filing_AMZN.md")
     ap.add_argument("--ticker", default="AMZN")
+    ap.add_argument("--from-store", action="store_true",
+                    help="use the filing ingest_filings.py stored for --ticker (and its saved vectors) instead of --filing")
     ap.add_argument("--agent", action="store_true", help="also run every question through the agent")
     ap.add_argument("--runs", type=int, default=1, help="agent runs per question")
     ap.add_argument("--limit", type=int, default=0, help="only the first N questions (smoke test)")
@@ -329,7 +358,18 @@ def main():
 
     mode = f"retrieval + agent ({args.runs} run(s) per question)" if args.agent else "retrieval ONLY (add --agent to also ask the agent)"
     print(f"MODE: {mode}")
-    spec, text = load_inputs(args.questions, args.filing)
+    args.ticker = args.ticker.upper().strip()
+    stored = None
+    if args.from_store:
+        if args.chunker != "table":
+            raise SystemExit("--from-store uses the stored table chunks; drop --chunker")
+        spec, _ = load_inputs(args.questions, None, args.ticker)
+        text, s_chunks, s_matrix, entry = load_stored(args.ticker)
+        stored = (s_chunks, s_matrix)
+        args.filing = f"store:{entry['files']}"
+        print(f"Stored filing: {args.ticker} {entry['form']} period {entry['period']}, filed {entry['filed']}")
+    else:
+        spec, text = load_inputs(args.questions, args.filing, args.ticker)
     questions = spec["questions"][: args.limit] if args.limit else spec["questions"]
 
     SECVectorRAG.DEFAULT_STRATEGY = args.chunker  # the app and the agent test both read this
@@ -347,6 +387,12 @@ def main():
         print("Retrieval test skipped: the agent builds its own search index.")
         retr_by_mode, modes = {}, [search_mode]
         retr = {}
+    elif stored:
+        rag, (chunks, embeddings) = SECVectorRAG(args.ticker), stored
+        bm25, n_total = BM25Index(chunks), len(chunks)
+        print(f"Index: {len(chunks)} stored chunks (no embedding calls)")
+        retr_by_mode = {m: retrieval_eval(rag, chunks, embeddings, bm25, filing_qs, mode=m) for m in modes}
+        retr = retr_by_mode[search_mode]
     else:
         rag, chunks, embeddings, bm25, n_total = build_index(args.ticker, text)
         print(f"Index: {len(chunks)} of {n_total} chunks embedded (keyword index on the same chunks)")
@@ -383,6 +429,8 @@ def main():
                 print("  " + q["id"].ljust(10) + "".join(("-" if c is None else str(c)).ljust(10) for c in cells))
 
     stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    # Stored-filing runs name the company in their outputs, so two companies never share a file
+    who = f"_{args.ticker}" if args.from_store else ""
     agent_rows = {}
     stopped_early = False
     trace_path = ""
@@ -391,12 +439,12 @@ def main():
     if args.agent:
         sec_rag.SEARCH_MODE = search_mode  # search_sec_filings reads this when the agent searches
         print(f"Agent search mode: {search_mode}")
-        nx, call_log = setup_agent(args.ticker, text)
+        nx, call_log = setup_agent(args.ticker, text, prebuilt=stored)
         judge_client = None
         if not args.no_judge:
             judge_client = make_judge_client(args.judge_model)  # fails fast if the key or package is missing
 
-        trace_path = f"eval_trace_{stamp}_{search_mode}.jsonl"
+        trace_path = f"eval_trace_{stamp}{who}_{search_mode}.jsonl"
         trace_mode = "w"
         if args.resume:
             trace_path, trace_mode = args.resume, "a"
@@ -521,9 +569,9 @@ def main():
                 print(f"\nSTOPPED EARLY: {type(e).__name__}: {e}")
 
         summary = summarize(list(agent_rows.values()))
-        summary_path = f"eval_summary_{stamp}_{search_mode}.json"
+        summary_path = f"eval_summary_{stamp}{who}_{search_mode}.json"
         with open(summary_path, "w", encoding="utf-8") as f:
-            json.dump({"run_at": stamp, "filing": args.filing, "runs": args.runs, "search_mode": search_mode,
+            json.dump({"run_at": stamp, "ticker": args.ticker, "filing": args.filing, "runs": args.runs, "search_mode": search_mode,
                        "chunker": args.chunker,
                        "agent_model": args.agent_model or getattr(nx, "AGENT_MODEL", "default"),
                        "judge_model": None if args.no_judge else args.judge_model,
@@ -532,7 +580,7 @@ def main():
         print("\nAGENT SUMMARY")
         print(json.dumps(summary, indent=2))
         print(f"\nSaved: {trace_path}\nSaved: {summary_path}")
-    out_path = f"eval_results_{stamp}_{search_mode}.csv"
+    out_path = f"eval_results_{stamp}{who}_{search_mode}.csv"
     fields = ["run_at", "search_mode", "id", "category", "answerable", "question", "expected_answer",
               "rank_strict", "rank_lenient", "hit_at_3_lenient", "hit_at_5_lenient", "top5_chunk_ids",
               "run", "expected_tools", "agent_tools_called", "tool_choice_ok", "agent_called_sec_tool", "agent_search_queries",
@@ -592,7 +640,10 @@ def main():
     print(f"\nSaved: {out_path}")
     if stopped_early:
         print(f"\nThe run did not finish: {len(agent_rows)} of {len(questions) * args.runs} answers are saved.\n"
-              f"To do only the rest, run:\n  python run_eval.py --agent --runs {args.runs} --search {search_mode} --resume {trace_path}")
+              f"To do only the rest, run:\n  python run_eval.py --agent --runs {args.runs} --search {search_mode} "
+              f"--questions {args.questions} "
+              + (f"--from-store --ticker {args.ticker} " if args.from_store else "")
+              + f"--resume {trace_path}")
     if not args.agent:
         print("NOTE: this was retrieval only, so the agent_answer columns are empty. "
               "Run again with:  python run_eval.py --agent --runs 2")

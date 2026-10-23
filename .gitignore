@@ -38,3 +38,6 @@ filing_*.md
 filing_*.md
 eval_results_*
 eval_summary_*
+
+# Ingested filings (ingest_filings.py)
+filing_store/

@@ -1,0 +1,173 @@
+{
+  "_instructions": [
+    "20 company-neutral questions for any ticker stored by ingest_filings.py. \"{ticker}\" is replaced with --ticker, and \"the company\" means the selected ticker.",
+    "Answers differ by company, so there is no expected answer and the judge is skipped (tool_only: true). What is measured: tool choice, numbers that are not in the tool output, and citations.",
+    "expected_tools: sec = filing search, technical = BigQuery signals table, watchlist = watchlist tool, [] = no tool (the agent should decline). Tool choice is right when the set of tools the agent called equals this list.",
+    "Run all three companies with:  python eval_companies.py"
+  ],
+  "questions": [
+    {
+      "id": "s01",
+      "category": "filing",
+      "question": "What was total revenue for the most recent period, and how did it compare with the same period last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true
+    },
+    {
+      "id": "s02",
+      "category": "filing",
+      "question": "What was net income for the most recent period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true
+    },
+    {
+      "id": "s03",
+      "category": "filing",
+      "question": "What does the filing say drove the change in operating income?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true
+    },
+    {
+      "id": "s04",
+      "category": "filing",
+      "question": "What are the main risks the filing mentions?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true
+    },
+    {
+      "id": "s05",
+      "category": "filing",
+      "question": "How much cash and cash equivalents did the company have at the end of the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true
+    },
+    {
+      "id": "s06",
+      "category": "filing",
+      "question": "How much did the company spend on share repurchases and dividends in the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true
+    },
+    {
+      "id": "s07",
+      "category": "filing",
+      "question": "Which business segment grew fastest, and by how much?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "tool_only": true
+    },
+    {
+      "id": "s08",
+      "category": "unanswerable",
+      "question": "What was the CEO's total compensation for the year?",
+      "answerable": false,
+      "expected_tools": ["sec"],
+      "tool_only": true,
+      "note": "A 10-Q or 10-K does not include CEO pay (that is in the proxy statement). The agent should search, then say the filing does not say."
+    },
+    {
+      "id": "t01",
+      "category": "technical",
+      "question": "What is the current stock price?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true
+    },
+    {
+      "id": "t02",
+      "category": "technical",
+      "question": "Is the 7-day moving average above the 60-day moving average?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true
+    },
+    {
+      "id": "t03",
+      "category": "technical",
+      "question": "What is the latest 14-day RSI, and does it point to overbought or oversold?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true
+    },
+    {
+      "id": "t04",
+      "category": "technical",
+      "question": "Is {ticker} trending up or down lately?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true
+    },
+    {
+      "id": "w01",
+      "category": "watchlist",
+      "question": "Add {ticker} to my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true
+    },
+    {
+      "id": "w02",
+      "category": "watchlist",
+      "question": "Remove {ticker} from my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true
+    },
+    {
+      "id": "m01",
+      "category": "mixed",
+      "question": "What was net income for the most recent period, and what is the current RSI?",
+      "answerable": true,
+      "expected_tools": ["sec", "technical"],
+      "tool_only": true
+    },
+    {
+      "id": "m02",
+      "category": "mixed",
+      "question": "Add {ticker} to my watchlist and tell me its latest RSI.",
+      "answerable": true,
+      "expected_tools": ["watchlist", "technical"],
+      "tool_only": true
+    },
+    {
+      "id": "n01",
+      "category": "out_of_scope",
+      "question": "What's the weather in Seattle today?",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true
+    },
+    {
+      "id": "n02",
+      "category": "out_of_scope",
+      "question": "Buy 10 shares of {ticker} for me.",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "No tool places trades."
+    },
+    {
+      "id": "n03",
+      "category": "out_of_scope",
+      "question": "Write a short poem about {ticker}.",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true
+    },
+    {
+      "id": "n04",
+      "category": "out_of_scope",
+      "question": "Is {ticker} on my watchlist?",
+      "answerable": false,
+      "expected_tools": [],
+      "tool_only": true,
+      "note": "No tool reads the watchlist, so the agent should say it cannot check it."
+    }
+  ]
+}
