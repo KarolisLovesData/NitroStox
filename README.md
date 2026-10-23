@@ -75,55 +75,55 @@ Utilities and Consumer Defensive have no volume-backed breakout rule, so their b
 
 ## 🧪 Evaluation
 
-I tested the filing Q&A agent on **Amazon's latest 10-Q**: 20 questions, each asked twice, so **40 answers**. 14 questions are answered in the filing; 6 are not, to see if the agent admits it doesn't know. Every answer was graded by Claude (a different AI from the Gemini agent) against my own answer key.
+**Setup.** 20 questions on Amazon's latest 10-Q, each asked twice (**40 answers**): 14 are answerable from the filing, 6 are not, to test whether the agent admits it doesn't know. **Claude Sonnet 5.5** grades every answer against my answer key; it is a different model family from the Gemini agent, so the agent is not graded by its own model. Code also checks every citation and every number against the retrieved text.
 
 <p align="center">
   <img src="docs/Nitrostox_eval_flow.png" alt="NitroStox evaluation flow" width="100%"/>
 </p>
 
-| Of 40 answers | Count | Example |
-| :--- | :---: | :--- |
-| ✅ Correct | **28** | Net income $62.6B, up from $18.2B (18 right answers + 10 correct "not in the filing") |
-| 🟡 Partly right | **10** | Right numbers, but left out part of the explanation |
-| ❌ Wrong | **0** | |
-| 🚫 Made up or from outside knowledge | **0** | Gross margin isn't in the filing: the agent now says so instead of inventing 52.3% |
+**Results** (hybrid search, cited answers)
 
-Every one of the 40 answers passed the code citation check, and the numbers in them all appear in the filing text the agent was given. The search step found the right passage for **26 of 28** answers to answerable questions.
+| Of 40 answers | Count |
+| :--- | :---: |
+| ✅ Correct (18 answered + 10 correct "not in the filing") | **28** |
+| 🟡 Partly right (right numbers, incomplete explanation) | **10** |
+| 📈 Answered from the price data (stock price: not in the filing, but in the agent's price tool) | **2** |
+| ❌ Wrong | **0** |
+| 🚫 Made up or from outside knowledge | **0** |
+| Passed the citation and number check | **40 / 40** |
+| Right passage retrieved (answerable questions) | **26 / 28** in this final run (27 / 28 in the earlier run used for the search comparison below) |
 
-**What the first test found**
-1. **Tables lose their headers when chunked.** The agent reported $18.2B (last year's net income) instead of $62.6B (this quarter's).
-2. **The chat agent isn't told to stick to the filing,** so it answers from general knowledge (CEO pay, market share).
+**What broke, and the fix**
 
-**What I changed because of it**
-- I made the agent cite the filing chunk behind every fact (for example `[chunk 14]`) and added a code check on those citations. Answers made up or taken from outside knowledge went from 5 of 40 to 0: the agent now says "The filing doesn't say".
-- I rebuilt the chunking ([`chunking.py`](src/chunking.py)) so every table chunk keeps its title and column headers. Net income is now right in both runs, and no answer in the re-test is wrong.
-- I added keyword search next to the vector search, so the search is now **hybrid** ([`keyword_search.py`](src/keyword_search.py)). I ran the same test with each method (before the citations were added):
+| Found in the first test | Fix | Result |
+| :--- | :--- | :--- |
+| Table chunks lost their headers, so the agent reported last year's net income ($18.2B) as this quarter's ($62.6B) | Every table chunk keeps its title and column headers ([`chunking.py`](src/chunking.py)) | Net income right in both runs; no wrong answers |
+| The agent answered from general knowledge (CEO pay, market share, an invented 52.3% gross margin) | Every fact must cite a chunk (`[chunk 14]`), checked in code; otherwise it says "The filing doesn't say" | Made-up answers **5 → 0** of 40 |
 
-| Same 40 answers | Vector search only | Hybrid search |
+The first test was graded by hand and the re-test by Claude, so read the before/after as indicative rather than exact.
+
+**Ablation: vector vs. hybrid search** (same 40 answers, run before citations were added)
+
+| | Vector only | Hybrid (+ BM25, RRF) |
 | :--- | :---: | :---: |
 | Fully correct (of 28 answerable) | 17 | **18** |
+| Correctly said "not in the filing" (of 12) | 6 | **7** |
+| Right passage retrieved (of 28) | 26 | **27** |
 | Wrong | 0 | 0 |
-| Said "not in the filing" when it should (of 12) | 6 | **7** |
-| Right passage found by the search (of 28) | 26 | **27** |
 
-  The difference is one answer, so hybrid matches vector on this test. It stays on as the default because it is safer for exact figures and years, and `NITROSTOX_SEARCH_MODE=vector` switches it off.
+A one-answer difference, so on this test hybrid matches vector. It stays the default because keyword search is more reliable for exact figures, years and line items ([`keyword_search.py`](src/keyword_search.py)); `NITROSTOX_SEARCH_MODE=vector` turns it off.
 
-The first test was graded by hand and these by Claude, so their counts are not directly comparable.
+**Tool routing** (50 more questions, each labelled with the right tool, or none)
 
-**Does the agent pick the right tool?**
-
-The agent has three tools: filing search, price and indicator signals (BigQuery), and the watchlist. I wrote **50 more questions**, each with the tool the agent should use (or none, for things like "What's the weather?"), and checked which tool it actually called.
-
-| Right tool chosen | First run | After the fix |
+| Right tool chosen | First run (2 runs) | After the fix (1 run) |
 | :--- | :---: | :---: |
-| All answers | 89 of 100 | **50 of 50** |
-| Requests no tool covers (weather, trading, poems) | 8 of 18 | **9 of 9** |
-| Filing, price, watchlist and mixed requests | 81 of 82 | **41 of 41** |
+| All questions | 89 / 100 | **50 / 50** |
+| No tool applies (weather, trading, poems) | 8 / 18 | **9 / 9** |
+| Filing, price, watchlist and mixed requests | 81 / 82 | **41 / 41** |
 
-**What the first run found:** when no tool applied, the agent searched the filing anyway, even for "What is the capital of France?", because its instructions said to always search first.
+**Failure:** the instructions said to always search first, so the agent searched the 10-Q even for "What is the capital of France?". **Fix:** use a tool only when the request needs one; otherwise, say what the agent can do.
 
-**What I changed:** the instructions now say to use a tool only when the request needs one, and otherwise to say what it can do. The same 50 questions now get the right tool every time.
-
+**Limits:** one company and one filing; 40 answers is a small sample; the after-fix tool test ran once.
 
 <details>
 <summary><b>▶️ How to run the evaluation (click to expand)</b></summary>

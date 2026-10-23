@@ -1,7 +1,7 @@
 """NitroStox SEC-RAG evaluation runner.
 
 Put this file in your NitroStox project folder, next to sec_rag.py,
-upgraded_nitrostox.py, filing_AMZN.txt and the eval question files.
+upgraded_nitrostox.py, filing_AMZN.md and the eval question files.
 
 The default question set is eval_questions_AMZN_tools.json: 20 questions mixing filing questions,
 price/indicator questions, watchlist requests and questions no tool can answer. The original 20
@@ -58,7 +58,7 @@ With --search all (the default) retrieval runs once per mode on the same embeddi
 CSV and the agent use hybrid.
 
 The agent test is pinned to your saved filing: StockAnalyzer is patched in this process
-only, so it reads filing_AMZN.txt instead of fetching the latest filing from EDGAR.
+only, so it reads the saved filing instead of fetching the latest filing from EDGAR.
 Your source files are not modified.
 
 Needs GEMINI_API_KEY in .env. --agent also needs the GCP credentials the app already uses.
@@ -300,7 +300,7 @@ def main():
     ap.add_argument("--questions", default="eval_questions_AMZN_tools.json",
                     help="question file. Default: the 20-question tool-choice set. "
                          "eval_questions_AMZN.json is the original 20 filing-only questions.")
-    ap.add_argument("--filing", default="filing_AMZN.txt")
+    ap.add_argument("--filing", default="filing_AMZN.md")
     ap.add_argument("--ticker", default="AMZN")
     ap.add_argument("--agent", action="store_true", help="also run every question through the agent")
     ap.add_argument("--runs", type=int, default=1, help="agent runs per question")
