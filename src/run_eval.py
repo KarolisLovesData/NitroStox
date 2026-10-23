@@ -380,6 +380,11 @@ def main():
             raise SystemExit(f"Expected answers not filled in yet for {', '.join(unfilled)}. "
                              "Fill them in from the stored filing, or add --no-judge.")
     questions = spec["questions"][: args.limit] if args.limit else spec["questions"]
+    # Every evidence snippet must be a real quote from this filing, so a wrong expected answer shows up here
+    missing = [q["id"] for q in questions if q.get("evidence_snippet") and norm(q["evidence_snippet"]) not in norm(text)]
+    if missing:
+        print(f"WARNING: the evidence quote of {', '.join(missing)} is not in this filing. "
+              "Check those expected answers before trusting their grades.")
 
     SECVectorRAG.DEFAULT_STRATEGY = args.chunker  # the app and the agent test both read this
     sig = inspect.signature(SECVectorRAG.chunk_text).parameters
