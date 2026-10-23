@@ -370,6 +370,15 @@ def main():
         print(f"Stored filing: {args.ticker} {entry['form']} period {entry['period']}, filed {entry['filed']}")
     else:
         spec, text = load_inputs(args.questions, args.filing, args.ticker)
+    # Multi-company sets tag each question with its ticker: ask only this company's questions
+    spec["questions"] = [q for q in spec["questions"] if q.get("ticker", args.ticker).upper() == args.ticker]
+    if not spec["questions"]:
+        raise SystemExit(f"{args.questions} has no questions for {args.ticker}")
+    if args.agent and not args.no_judge:
+        unfilled = [q["id"] for q in spec["questions"] if q.get("expected_answer") == "TO_FILL"]
+        if unfilled:
+            raise SystemExit(f"Expected answers not filled in yet for {', '.join(unfilled)}. "
+                             "Fill them in from the stored filing, or add --no-judge.")
     questions = spec["questions"][: args.limit] if args.limit else spec["questions"]
 
     SECVectorRAG.DEFAULT_STRATEGY = args.chunker  # the app and the agent test both read this

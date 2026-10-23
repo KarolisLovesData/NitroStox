@@ -1,0 +1,393 @@
+{
+  "_instructions": [
+    "40 questions across AMZN, MSFT and GOOGL, one run. Each question has a ticker: run_eval.py --ticker X asks only that company's questions; eval_companies.py runs all three.",
+    "Graded on tool choice (all 40), citations (every answer) and correctness by the AI judge (every question with an expected answer, plus the ones the agent should decline). Price and watchlist questions (tool_only) have no fixed answer, so only their tool choice is graded.",
+    "expected_tools: sec = filing search, technical = BigQuery signals table, watchlist = watchlist tool, [] = no tool.",
+    "Expected answers come from the filing ingest_filings.py stored for each company (see 'filings'). When a company files a new 10-Q or 10-K, update its answers."
+  ],
+  "filings": {
+    "AMZN": {
+      "form": "10-Q",
+      "period": "2026-06-30",
+      "note": "answers copied from eval_questions_AMZN_tools50.json; check against the stored filing"
+    },
+    "MSFT": {
+      "form": "TO_FILL",
+      "period": "TO_FILL"
+    },
+    "GOOGL": {
+      "form": "TO_FILL",
+      "period": "TO_FILL"
+    }
+  },
+  "questions": [
+    {
+      "id": "amzn_f1",
+      "ticker": "AMZN",
+      "category": "filing",
+      "question": "What was total revenue for the most recent quarter, and how did it compare with the same quarter last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Total net sales were $200,606 million in Q2 2026 versus $167,702 million in Q2 2025, an increase of 20%.",
+      "evidence_snippet": "Sales increased 20% in Q2 2026"
+    },
+    {
+      "id": "amzn_f2",
+      "ticker": "AMZN",
+      "category": "filing",
+      "question": "What was net income for the most recent quarter?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Net income was $62,647 million in Q2 2026 versus $18,164 million in Q2 2025.",
+      "evidence_snippet": "Net income $ 18,164 62,647 $ 35,291 $ 92,902"
+    },
+    {
+      "id": "amzn_f3",
+      "ticker": "AMZN",
+      "category": "filing",
+      "question": "How did operating income change compared with the same quarter last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "amzn_f4",
+      "ticker": "AMZN",
+      "category": "filing",
+      "question": "How much cash and cash equivalents did the company have at the end of the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "amzn_f5",
+      "ticker": "AMZN",
+      "category": "filing",
+      "question": "How much did the company spend on share repurchases and dividends in the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "Nothing on repurchases: there were no repurchases of common stock in the six months ended June 30, 2025 or 2026, and $6.1 billion remained under the repurchase authorization. The filing reports no dividend payments.",
+      "evidence_snippet": "There were no repurchases of our common stock during the six months ended June 30, 2025 or 2026."
+    },
+    {
+      "id": "amzn_f6",
+      "ticker": "AMZN",
+      "category": "filing",
+      "question": "Which business segment grew fastest, and by how much?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "AWS grew fastest: net sales rose 37% in Q2 2026 ($42,232 million versus $30,873 million). North America grew 16% and International 15%.",
+      "evidence_snippet": "AWS sales increased 37% in Q2 2026"
+    },
+    {
+      "id": "amzn_f7",
+      "ticker": "AMZN",
+      "category": "filing",
+      "question": "How much did the company spend on property and equipment (capital expenditures) in the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "amzn_f8",
+      "ticker": "AMZN",
+      "category": "filing",
+      "question": "What are the main risks the filing mentions?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL",
+      "note": "Grade as correct when the answer names risks the filing actually lists, with citations; it does not need every risk."
+    },
+    {
+      "id": "amzn_u1",
+      "ticker": "AMZN",
+      "category": "unanswerable",
+      "question": "What was the CEO's total compensation for the year?",
+      "answerable": false,
+      "expected_tools": ["sec"],
+      "note": "A 10-Q or 10-K does not include CEO pay (that is in the proxy statement). The agent should search, then say the filing does not say."
+    },
+    {
+      "id": "msft_f1",
+      "ticker": "MSFT",
+      "category": "filing",
+      "question": "What was total revenue for the most recent quarter, and how did it compare with the same quarter last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "msft_f2",
+      "ticker": "MSFT",
+      "category": "filing",
+      "question": "What was net income for the most recent quarter?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "msft_f3",
+      "ticker": "MSFT",
+      "category": "filing",
+      "question": "How did operating income change compared with the same quarter last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "msft_f4",
+      "ticker": "MSFT",
+      "category": "filing",
+      "question": "How much cash and cash equivalents did the company have at the end of the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "msft_f5",
+      "ticker": "MSFT",
+      "category": "filing",
+      "question": "How much did the company spend on share repurchases and dividends in the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "msft_f6",
+      "ticker": "MSFT",
+      "category": "filing",
+      "question": "Which business segment grew fastest, and by how much?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "msft_f7",
+      "ticker": "MSFT",
+      "category": "filing",
+      "question": "How much did the company spend on property and equipment (capital expenditures) in the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "msft_f8",
+      "ticker": "MSFT",
+      "category": "filing",
+      "question": "What are the main risks the filing mentions?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL",
+      "note": "Grade as correct when the answer names risks the filing actually lists, with citations; it does not need every risk."
+    },
+    {
+      "id": "msft_u1",
+      "ticker": "MSFT",
+      "category": "unanswerable",
+      "question": "What was the CEO's total compensation for the year?",
+      "answerable": false,
+      "expected_tools": ["sec"],
+      "note": "A 10-Q or 10-K does not include CEO pay (that is in the proxy statement). The agent should search, then say the filing does not say."
+    },
+    {
+      "id": "googl_f1",
+      "ticker": "GOOGL",
+      "category": "filing",
+      "question": "What was total revenue for the most recent quarter, and how did it compare with the same quarter last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "googl_f2",
+      "ticker": "GOOGL",
+      "category": "filing",
+      "question": "What was net income for the most recent quarter?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "googl_f3",
+      "ticker": "GOOGL",
+      "category": "filing",
+      "question": "How did operating income change compared with the same quarter last year?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "googl_f4",
+      "ticker": "GOOGL",
+      "category": "filing",
+      "question": "How much cash and cash equivalents did the company have at the end of the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "googl_f5",
+      "ticker": "GOOGL",
+      "category": "filing",
+      "question": "How much did the company spend on share repurchases and dividends in the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "googl_f6",
+      "ticker": "GOOGL",
+      "category": "filing",
+      "question": "Which business segment grew fastest, and by how much?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "googl_f7",
+      "ticker": "GOOGL",
+      "category": "filing",
+      "question": "How much did the company spend on property and equipment (capital expenditures) in the period?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL"
+    },
+    {
+      "id": "googl_f8",
+      "ticker": "GOOGL",
+      "category": "filing",
+      "question": "What are the main risks the filing mentions?",
+      "answerable": true,
+      "expected_tools": ["sec"],
+      "expected_answer": "TO_FILL",
+      "note": "Grade as correct when the answer names risks the filing actually lists, with citations; it does not need every risk."
+    },
+    {
+      "id": "googl_u1",
+      "ticker": "GOOGL",
+      "category": "unanswerable",
+      "question": "What was the CEO's total compensation for the year?",
+      "answerable": false,
+      "expected_tools": ["sec"],
+      "note": "A 10-Q or 10-K does not include CEO pay (that is in the proxy statement). The agent should search, then say the filing does not say."
+    },
+    {
+      "id": "amzn_t1",
+      "ticker": "AMZN",
+      "category": "technical",
+      "question": "What is the current stock price?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true
+    },
+    {
+      "id": "amzn_t2",
+      "ticker": "AMZN",
+      "category": "technical",
+      "question": "Is the 7-day moving average above the 60-day moving average?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true
+    },
+    {
+      "id": "msft_t3",
+      "ticker": "MSFT",
+      "category": "technical",
+      "question": "What is the latest 14-day RSI, and does it point to overbought or oversold?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true
+    },
+    {
+      "id": "googl_t4",
+      "ticker": "GOOGL",
+      "category": "technical",
+      "question": "Is {ticker} trending up or down lately?",
+      "answerable": true,
+      "expected_tools": ["technical"],
+      "tool_only": true
+    },
+    {
+      "id": "amzn_w1",
+      "ticker": "AMZN",
+      "category": "watchlist",
+      "question": "Add {ticker} to my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true
+    },
+    {
+      "id": "msft_w2",
+      "ticker": "MSFT",
+      "category": "watchlist",
+      "question": "Remove {ticker} from my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true
+    },
+    {
+      "id": "googl_w3",
+      "ticker": "GOOGL",
+      "category": "watchlist",
+      "question": "Please keep an eye on {ticker} for me by putting it on my watchlist.",
+      "answerable": true,
+      "expected_tools": ["watchlist"],
+      "tool_only": true
+    },
+    {
+      "id": "msft_m1",
+      "ticker": "MSFT",
+      "category": "mixed",
+      "question": "What was net income for the most recent quarter, and what is the current RSI?",
+      "answerable": true,
+      "expected_tools": ["sec", "technical"],
+      "expected_answer": "TO_FILL",
+      "note": "Net income from the filing (cited to a chunk) and the latest RSI_14 from the signals table (cited [signals])."
+    },
+    {
+      "id": "googl_m2",
+      "ticker": "GOOGL",
+      "category": "mixed",
+      "question": "Add {ticker} to my watchlist and tell me its latest RSI.",
+      "answerable": true,
+      "expected_tools": ["watchlist", "technical"],
+      "tool_only": true
+    },
+    {
+      "id": "amzn_n1",
+      "ticker": "AMZN",
+      "category": "out_of_scope",
+      "question": "What's the weather in Seattle today?",
+      "answerable": false,
+      "expected_tools": [],
+      "note": "No tool covers this; the agent should say so."
+    },
+    {
+      "id": "amzn_n2",
+      "ticker": "AMZN",
+      "category": "out_of_scope",
+      "question": "Is {ticker} on my watchlist?",
+      "answerable": false,
+      "expected_tools": [],
+      "note": "No tool reads the watchlist, so the agent should say it cannot check it."
+    },
+    {
+      "id": "msft_n3",
+      "ticker": "MSFT",
+      "category": "out_of_scope",
+      "question": "Buy 10 shares of {ticker} for me.",
+      "answerable": false,
+      "expected_tools": [],
+      "note": "No tool places trades."
+    },
+    {
+      "id": "googl_n4",
+      "ticker": "GOOGL",
+      "category": "out_of_scope",
+      "question": "Write a short poem about {ticker}.",
+      "answerable": false,
+      "expected_tools": [],
+      "note": "Writing is outside what the tools do."
+    }
+  ]
+}

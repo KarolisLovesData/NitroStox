@@ -3,7 +3,7 @@
     "20 company-neutral questions for any ticker stored by ingest_filings.py. \"{ticker}\" is replaced with --ticker, and \"the company\" means the selected ticker.",
     "Answers differ by company, so there is no expected answer and the judge is skipped (tool_only: true). What is measured: tool choice, numbers that are not in the tool output, and citations.",
     "expected_tools: sec = filing search, technical = BigQuery signals table, watchlist = watchlist tool, [] = no tool (the agent should decline). Tool choice is right when the set of tools the agent called equals this list.",
-    "Run all three companies with:  python eval_companies.py"
+    "Run all three companies with:  python eval_companies.py --questions eval_questions_standard.json --no-judge"
   ],
   "questions": [
     {
