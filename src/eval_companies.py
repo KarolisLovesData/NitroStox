@@ -15,6 +15,7 @@ run_eval.py as they are.
 """
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -33,7 +34,8 @@ def main():
         print(f"\n===== {t} =====", flush=True)
         cmd = [sys.executable, "run_eval.py", "--agent", "--skip-retrieval", "--from-store",
                "--ticker", t, "--questions", args.questions, *extra]
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}  # emoji in the app's messages
+        proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                                 encoding="utf-8", errors="replace")
         path = None
         for line in proc.stdout:  # show run_eval's progress live and catch the summary file name
