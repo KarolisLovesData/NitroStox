@@ -1,23 +1,21 @@
 {
-  "_instructions": [
-    "40 questions across AMZN, MSFT and GOOGL, one run. Each question has a ticker: run_eval.py --ticker X asks only that company's questions; eval_companies.py runs all three.",
-    "Graded on tool choice (all 40), citations (every answer) and correctness by the AI judge (every question with an expected answer, plus the ones the agent should decline). Price and watchlist questions (tool_only) have no fixed answer, so only their tool choice is graded.",
-    "expected_tools: sec = filing search, technical = BigQuery signals table, watchlist = watchlist tool, [] = no tool.",
-    "Expected answers come from the filing ingest_filings.py stored for each company (see 'filings'). When a company files a new 10-Q or 10-K, update its answers."
-  ],
+  "_instructions": ["40 questions across AMZN, MSFT and GOOGL, one run. Each question has a ticker: run_eval.py --ticker X asks only that company's questions; eval_companies.py runs all three.", "Graded on tool choice (all 40), citations (every answer) and correctness by the AI judge (every question with an expected answer, plus the ones the agent should decline). Price and watchlist questions (tool_only) have no fixed answer, so only their tool choice is graded.", "expected_tools: sec = filing search, technical = BigQuery signals table, watchlist = watchlist tool, [] = no tool.", "Expected answers come from the filings ingest_filings.py stored on 2026-10-24 (see 'filings'). When a company files a new 10-Q or 10-K, update its answers. Percentages marked 'computed' are worked out from two figures in the filing."],
   "filings": {
     "AMZN": {
       "form": "10-Q",
       "period": "2026-06-30",
-      "note": "answers copied from eval_questions_AMZN_tools50.json; check against the stored filing"
+      "filed": "2026-07-31"
     },
     "MSFT": {
-      "form": "TO_FILL",
-      "period": "TO_FILL"
+      "form": "10-K",
+      "period": "2026-06-30",
+      "filed": "2026-07-29",
+      "note": "annual report: figures are fiscal year 2026"
     },
     "GOOGL": {
-      "form": "TO_FILL",
-      "period": "TO_FILL"
+      "form": "10-Q",
+      "period": "2026-06-30",
+      "filed": "2026-07-23"
     }
   },
   "questions": [
@@ -48,7 +46,8 @@
       "question": "How did operating income change compared with the same quarter last year?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Operating income was $27,461 million in Q2 2026 versus $19,171 million in Q2 2025, about 43% higher (the percentage is computed; the filing gives the two figures).",
+      "evidence_snippet": "Operating income 19,171 27,461 37,576 51,313"
     },
     {
       "id": "amzn_f4",
@@ -57,7 +56,8 @@
       "question": "How much cash and cash equivalents did the company have at the end of the period?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Cash and cash equivalents were $78,213 million at June 30, 2026 (versus $86,810 million at December 31, 2025).",
+      "evidence_snippet": "Cash and cash equivalents 86,810 78,213"
     },
     {
       "id": "amzn_f5",
@@ -67,7 +67,7 @@
       "answerable": true,
       "expected_tools": ["sec"],
       "expected_answer": "Nothing on repurchases: there were no repurchases of common stock in the six months ended June 30, 2025 or 2026, and $6.1 billion remained under the repurchase authorization. The filing reports no dividend payments.",
-      "evidence_snippet": "There were no repurchases of our common stock during the six months ended June 30, 2025 or 2026."
+      "evidence_snippet": "billion remaining under the repurchase program"
     },
     {
       "id": "amzn_f6",
@@ -86,7 +86,8 @@
       "question": "How much did the company spend on property and equipment (capital expenditures) in the period?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Purchases of property and equipment were $54,208 million in Q2 2026 (versus $32,183 million in Q2 2025) and $98,411 million for the six months ended June 30, 2026.",
+      "evidence_snippet": "Purchases of property and equipment -32,183 -54,208 -57,202 -98,411"
     },
     {
       "id": "amzn_f8",
@@ -95,7 +96,7 @@
       "question": "What are the main risks the filing mentions?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL",
+      "expected_answer": "Names risks the filing lists, such as exchange rates and energy prices, global economic conditions, tariffs and trade policy, memory-chip supply, customer demand, competition, and legal proceedings.",
       "note": "Grade as correct when the answer names risks the filing actually lists, with citations; it does not need every risk."
     },
     {
@@ -111,28 +112,33 @@
       "id": "msft_f1",
       "ticker": "MSFT",
       "category": "filing",
-      "question": "What was total revenue for the most recent quarter, and how did it compare with the same quarter last year?",
+      "question": "What was total revenue for the most recent fiscal year, and how did it compare with the year before?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Revenue was $331,839 million in fiscal year 2026 versus $281,724 million in fiscal year 2025, an increase of 18%.",
+      "evidence_snippet": "Revenue 331,839 281,724",
+      "note": "MSFT's latest filing is the annual 10-K (fiscal year ended June 30, 2026), so figures are for the full fiscal year, not a quarter."
     },
     {
       "id": "msft_f2",
       "ticker": "MSFT",
       "category": "filing",
-      "question": "What was net income for the most recent quarter?",
+      "question": "What was net income for the most recent fiscal year?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Net income was $133,749 million in fiscal year 2026 versus $101,832 million in fiscal year 2025, an increase of 31%.",
+      "evidence_snippet": "Net income 133,749 101,832",
+      "note": "MSFT's latest filing is the annual 10-K (fiscal year ended June 30, 2026), so figures are for the full fiscal year, not a quarter."
     },
     {
       "id": "msft_f3",
       "ticker": "MSFT",
       "category": "filing",
-      "question": "How did operating income change compared with the same quarter last year?",
+      "question": "How did operating income change compared with the year before?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Operating income was $155,237 million in fiscal year 2026 versus $128,528 million in fiscal year 2025, an increase of 21%.",
+      "evidence_snippet": "Operating income 155,237 128,528"
     },
     {
       "id": "msft_f4",
@@ -141,7 +147,8 @@
       "question": "How much cash and cash equivalents did the company have at the end of the period?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Cash and cash equivalents were $20,935 million at June 30, 2026 (versus $30,242 million at June 30, 2025).",
+      "evidence_snippet": "Cash and cash equivalents 20,935 30,242"
     },
     {
       "id": "msft_f5",
@@ -150,7 +157,9 @@
       "question": "How much did the company spend on share repurchases and dividends in the period?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "In fiscal year 2026 the company repurchased $22,271 million of common stock and paid $26,445 million in common stock cash dividends (cash flow statement).",
+      "evidence_snippet": "Common stock repurchased (22,271 ) (18,420 ) (17,254 )",
+      "alt_snippets": ["Common stock cash dividends paid (26,445 ) (24,082 ) (21,771 )"]
     },
     {
       "id": "msft_f6",
@@ -159,7 +168,8 @@
       "question": "Which business segment grew fastest, and by how much?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Intelligent Cloud grew fastest: revenue rose 30% to $137,791 million from $106,265 million. Productivity and Business Processes grew 16% and More Personal Computing declined 1%.",
+      "evidence_snippet": "Revenue 137,791 106,265"
     },
     {
       "id": "msft_f7",
@@ -168,7 +178,8 @@
       "question": "How much did the company spend on property and equipment (capital expenditures) in the period?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Additions to property and equipment were $115,948 million in fiscal year 2026 (versus $64,551 million in fiscal year 2025).",
+      "evidence_snippet": "Additions to property and equipment (115,948 ) (64,551 ) (44,477 )"
     },
     {
       "id": "msft_f8",
@@ -177,7 +188,7 @@
       "question": "What are the main risks the filing mentions?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL",
+      "expected_answer": "Names risks the filing lists, such as intense competition across its markets and the competitive pressure among platform-based ecosystems.",
       "note": "Grade as correct when the answer names risks the filing actually lists, with citations; it does not need every risk."
     },
     {
@@ -196,7 +207,8 @@
       "question": "What was total revenue for the most recent quarter, and how did it compare with the same quarter last year?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Revenues were $119,796 million in Q2 2026 versus $96,428 million in Q2 2025, about 24% higher (percentage computed).",
+      "evidence_snippet": "Revenues 96,428 119,796 186,662 229,692"
     },
     {
       "id": "googl_f2",
@@ -205,7 +217,9 @@
       "question": "What was net income for the most recent quarter?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Net income was $112,193 million in Q2 2026 versus $28,196 million in Q2 2025.",
+      "evidence_snippet": "Net income 28,196 112,193 62,736 174,771",
+      "note": "The jump is far larger than the growth in operating income. A good answer gives the figures and does not present the increase as operating improvement."
     },
     {
       "id": "googl_f3",
@@ -214,7 +228,8 @@
       "question": "How did operating income change compared with the same quarter last year?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Income from operations was $40,770 million in Q2 2026 versus $31,271 million in Q2 2025, about 30% higher (percentage computed).",
+      "evidence_snippet": "Income from operations 31,271 40,770 61,877 80,466"
     },
     {
       "id": "googl_f4",
@@ -223,7 +238,8 @@
       "question": "How much cash and cash equivalents did the company have at the end of the period?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Cash and cash equivalents were $55,911 million at June 30, 2026 (versus $30,708 million at December 31, 2025).",
+      "evidence_snippet": "Cash and cash equivalents 30,708 55,911"
     },
     {
       "id": "googl_f5",
@@ -232,7 +248,9 @@
       "question": "How much did the company spend on share repurchases and dividends in the period?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "No repurchases of Class A or Class C shares in the three and six months ended June 30, 2026; $69.5 billion of the $70.0 billion authorization remained. Dividend payments were $5,231 million for the six months ended June 30, 2026.",
+      "evidence_snippet": "there were no repurchases of the company's Class A or Class C shares",
+      "alt_snippets": ["Dividend payments -4,977 -5,231"]
     },
     {
       "id": "googl_f6",
@@ -241,7 +259,8 @@
       "question": "Which business segment grew fastest, and by how much?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Google Cloud grew fastest: revenues rose to $24,768 million in Q2 2026 from $13,624 million in Q2 2025 (about 82%, computed). Google Services grew from $82,543 million to $94,540 million.",
+      "evidence_snippet": "Google Cloud 13,624 24,768 25,884 44,796"
     },
     {
       "id": "googl_f7",
@@ -250,7 +269,8 @@
       "question": "How much did the company spend on property and equipment (capital expenditures) in the period?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL"
+      "expected_answer": "Purchases of property and equipment were $80,598 million for the six months ended June 30, 2026 (versus $39,643 million for the same period in 2025). The filing's cash flow statement shows six months only.",
+      "evidence_snippet": "Purchases of property and equipment -39,643 -80,598"
     },
     {
       "id": "googl_f8",
@@ -259,7 +279,7 @@
       "question": "What are the main risks the filing mentions?",
       "answerable": true,
       "expected_tools": ["sec"],
-      "expected_answer": "TO_FILL",
+      "expected_answer": "Names risks the filing lists, such as the risk of increasing investment in new businesses, products and technologies, the large and growing investment in technical infrastructure, and changes in user and customer behavior.",
       "note": "Grade as correct when the answer names risks the filing actually lists, with citations; it does not need every risk."
     },
     {
@@ -338,11 +358,12 @@
       "id": "msft_m1",
       "ticker": "MSFT",
       "category": "mixed",
-      "question": "What was net income for the most recent quarter, and what is the current RSI?",
+      "question": "What was net income for the most recent fiscal year, and what is the current RSI?",
       "answerable": true,
       "expected_tools": ["sec", "technical"],
-      "expected_answer": "TO_FILL",
-      "note": "Net income from the filing (cited to a chunk) and the latest RSI_14 from the signals table (cited [signals])."
+      "expected_answer": "Net income was $133,749 million for fiscal year 2026 (cited to a filing chunk), and the latest RSI_14 from the signals table (cited [signals]).",
+      "note": "Net income from the filing (annual 10-K, fiscal year ended June 30, 2026) and the latest RSI_14 from the signals table.",
+      "evidence_snippet": "Net income 133,749 101,832"
     },
     {
       "id": "googl_m2",
