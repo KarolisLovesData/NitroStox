@@ -75,6 +75,7 @@ import inspect
 import json
 import os
 import re
+import sys
 import time
 
 import numpy as np
@@ -323,6 +324,11 @@ def setup_agent(ticker: str, text: str, prebuilt=None):
 
 
 def main():
+    # The app prints emoji ("⚠️ ..."). A Windows console or pipe uses cp1252 and crashes on them, which
+    # made every search fail with a 'charmap' error. Never let a print break a run.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser()
     ap.add_argument("--questions", default="eval_questions_AMZN_tools.json",
                     help="question file. Default: the 20-question tool-choice set. "
