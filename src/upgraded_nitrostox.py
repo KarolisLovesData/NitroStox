@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import yfinance as yf
-from sec_rag import SECVectorRAG
+import filing_store
+from sec_rag import EMBED_MODEL, SECVectorRAG
 from keyword_search import BM25Index
 from grounding import (NOT_IN_FILING, SIGNALS_TAG, check_citations, format_chunks,
                        parse_tool_sources, repair_request, warning_note)
@@ -472,7 +473,35 @@ class StockAnalyzer:
 
             return self._build_sec_knowledge_base_uncached()
 
+    def _load_from_store(self) -> int:
+        """Loads the filing ingest_filings.py stored for this ticker. 0 if none (or made with another embedding model)."""
+        if os.getenv("NITROSTOX_USE_STORE", "1") == "0":
+            return 0
+        try:
+            entry = filing_store.latest(self.ticker)
+            if not entry or entry.get("embed_model") != EMBED_MODEL:
+                return 0
+            records, matrix = filing_store.load(entry)
+        except Exception as e:
+            print(f"⚠️ Filing store unreadable for {self.ticker} ({e}); downloading from EDGAR instead.")
+            return 0
+        self.sec_chunks = [r["text"] for r in records]
+        self.sec_embeddings = matrix.astype(np.float32)
+        self.sec_bm25 = BM25Index(self.sec_chunks)
+        _KB_CACHE[self.ticker] = {
+            "chunks": self.sec_chunks,
+            "embeddings": self.sec_embeddings,
+            "bm25": self.sec_bm25,
+            "built_at": time.time(),
+        }
+        print(f"⚡ Loaded {len(self.sec_chunks)} stored chunks for {self.ticker} "
+              f"({entry['form']}, period {entry['period']}, filed {entry['filed']}).")
+        return len(self.sec_chunks)
+
     def _build_sec_knowledge_base_uncached(self) -> int:
+        stored = self._load_from_store()
+        if stored:
+            return stored
         try:
             print(f"📥 Connecting to SEC EDGAR for {self.ticker}...")
             sec_id = os.getenv("SEC_IDENTITY", "DataAnalyst user@example.com")
