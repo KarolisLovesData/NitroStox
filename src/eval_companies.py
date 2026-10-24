@@ -5,6 +5,8 @@
   python eval_companies.py --questions eval_questions_standard.json --no-judge
                                                     # 20 neutral questions asked of every company
   python eval_companies.py --tickers AMZN MSFT      # only these stored companies
+  python eval_companies.py --retrieval              # search only: does vector, hybrid or keyword search find the
+                                                    # right passage? (no agent, no judge, no Claude credit)
 
 Runs run_eval.py once per company on the filing ingest_filings.py stored for it (agent only,
 saved vectors, so the only Gemini calls are the agent's answers and its search queries; the
@@ -23,11 +25,54 @@ import sys
 DEFAULT_TICKERS = ["AMZN", "MSFT", "GOOGL"]
 
 
+def retrieval_table(tickers, questions, extra):
+    """Runs run_eval's retrieval test per company and prints how often each search finds the right passage."""
+    found = {}  # ticker -> {mode: (top3, top5, n)}
+    for t in tickers:
+        print(f"\n===== {t} =====", flush=True)
+        cmd = [sys.executable, "run_eval.py", "--from-store", "--ticker", t, "--questions", questions, *extra]
+        env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+        proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                encoding="utf-8", errors="replace")
+        mode = None
+        found[t] = {}
+        for line in proc.stdout:
+            print(line, end="", flush=True)
+            m = re.match(r"RETRIEVAL \[(\w+)\]", line.strip())
+            if m:
+                mode = m.group(1)
+            m = re.match(r"lenient .*hit@3 (\d+)/(\d+)\s+hit@5 (\d+)/(\d+)", line.strip())
+            if m and mode:
+                found[t][mode] = (int(m.group(1)), int(m.group(3)), int(m.group(2)))
+        proc.wait()
+
+    modes = [m for m in ("vector", "hybrid", "keyword") if any(m in v for v in found.values())]
+    print("\nRIGHT PASSAGE FOUND (question used as the search; top 3 / top 5 results)")
+    print(f"  {'ticker':8}" + "".join(f"{m:16}" for m in modes))
+    total = {m: [0, 0, 0] for m in modes}
+    for t, v in found.items():
+        cells = []
+        for m in modes:
+            if m in v:
+                a, b, n = v[m]
+                cells.append(f"{a}/{n} | {b}/{n}")
+                total[m] = [total[m][0] + a, total[m][1] + b, total[m][2] + n]
+            else:
+                cells.append("did not run")
+        print(f"  {t:8}" + "".join(f"{c:16}" for c in cells))
+    print(f"  {'TOTAL':8}" + "".join(f"{str(total[m][0]) + '/' + str(total[m][2]) + ' | ' + str(total[m][1]) + '/' + str(total[m][2]):16}"
+                                      for m in modes))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tickers", nargs="+", default=DEFAULT_TICKERS)
     ap.add_argument("--questions", default="eval_questions_companies40.json")
+    ap.add_argument("--retrieval", action="store_true",
+                    help="only test the search (vector vs hybrid vs keyword); no agent answers, no judge")
     args, extra = ap.parse_known_args()
+    if args.retrieval:
+        return retrieval_table([x.upper().strip() for x in args.tickers], args.questions, extra)
 
     summaries = {}
     for t in [x.upper().strip() for x in args.tickers]:
