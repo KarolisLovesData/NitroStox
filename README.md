@@ -112,11 +112,21 @@ The 3 partly right answers were correct but left out part of what was asked. The
 
 | Of 40 questions | Vector only | Hybrid (+ BM25, RRF) |
 | :--- | :---: | :---: |
-| Right tool chosen | _ / 40 | **40 / 40** |
-| Citations and numbers valid | _ / 40 | **40 / 40** |
-| ✅ Correct (of 25) | _ / 25 | **22 / 25** |
-| ❌ Wrong | _ | **0** |
-| 🛑 Correctly refused (of 7) | _ / 7 | **7 / 7** |
+| Right tool chosen | 39 / 40 | **40 / 40** |
+| Citations and numbers valid | 40 / 40 | **40 / 40** |
+| ✅ Correct (of 25) | 20 / 25 | **22 / 25** |
+| ❌ Wrong | 0 | **0** |
+| 🛑 Correctly refused (of 7) | 7 / 7 | **7 / 7** |
+
+Hybrid answered 2 more questions fully correctly than vector alone, and made one fewer wrong tool choice.
+
+**Search alone** (the bare question used as the search, 22 filing questions; how often the right passage is in the top 3 / top 5 results)
+
+| Vector | Hybrid | Keyword only |
+| :---: | :---: | :---: |
+| **13 / 22 \| 16 / 22** | 8 / 22 \| 14 / 22 | 3 / 22 \| 6 / 22 |
+
+On a bare question, vector search finds the right passage most often. Inside the agent, which rewrites each question into its own search, vector and hybrid both found all 22 passages, and hybrid gave the better final answers.
 
 **Limits:** three companies, one run each, and 40 questions is a small sample. The answer key is mine, and the grader is itself an LLM.
 
