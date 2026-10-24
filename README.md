@@ -120,7 +120,7 @@ The 3 partly right answers were correct but left out part of what was asked. The
 
 Hybrid answered 2 more questions fully correctly than vector alone, and made one fewer wrong tool choice.
 
-**Search alone** (the bare question used as the search, 22 filing questions; how often the right passage is in the top 3 / top 5 results)
+**Search alone** (the bare question used as the search, 22 filing questions that each have a single source passage, so the 3 broad ones such as "main risks" are left out; how often the right passage is in the top 3 / top 5 results)
 
 | Vector | Hybrid | Keyword only |
 | :---: | :---: | :---: |
@@ -138,13 +138,14 @@ cd src
 python ingest_filings.py                    # saves the latest filing of AMZN, MSFT and GOOGL (add --tickers to change)
 python eval_companies.py                    # asks the 40 questions, grades them, prints the results table
 python eval_companies.py --search vector    # same test with vector search only (default is hybrid)
+python eval_companies.py --retrieval        # search only: does vector, hybrid or keyword search find the right passage?
 ```
 
 Needs `GEMINI_API_KEY`, `SEC_IDENTITY` and, for grading, `ANTHROPIC_API_KEY` in `.env`. Add `--no-judge` to skip grading; tool choice and citations are still checked.
 
-The default search is hybrid. To compare search methods, add `--search vector`, `--search hybrid` or `--search keyword`; `--search all` runs the retrieval test for all three side by side.
+The default search is hybrid. Use `--search vector` or `--search hybrid` to compare the two on the full 40 questions. `--retrieval` skips the agent and the grader, so it costs no Claude credit and prints the "Search alone" table above.
 
-With `--agent`, a script flags figures that are not in the retrieved text and checks the citations (valid, present, and pointing at a chunk that holds the figure), and **Claude Sonnet 5.5** (a different model from the Gemini agent) grades each answer. This needs `ANTHROPIC_API_KEY` in `.env` and `pip install anthropic`; change the judge with `--judge-model` or skip it with `--no-judge`. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
+Each answer is checked in code (every figure must appear in the retrieved text, and every citation must point to a chunk that holds it) and graded by **Claude Sonnet 5.5**, a different model from the Gemini agent. Each run saves a results CSV, a trace of what the agent retrieved, and a JSON summary, with the search method in the file name.
 </details>
 
 <details>
