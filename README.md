@@ -75,7 +75,13 @@ Utilities and Consumer Defensive have no volume-backed breakout rule, so their b
 
 ## 🧪 Evaluation
 
-**Setup.** 20 questions on Amazon's latest 10-Q, each asked twice (**40 answers**): 14 are answerable from the filing, 6 are not, to test whether the agent admits it doesn't know. **Claude Sonnet 5.5** grades every answer against my answer key; it is a different model family from the Gemini agent, so the agent is not graded by its own model. Code also checks every citation and every number against the retrieved text.
+**Headline:** on 40 questions across three companies' filings, the agent chose the right tool **40 / 40** times, every citation was valid (**40 / 40**), it answered **22 / 25** fully correctly with **0 wrong**, and it refused **7 / 7** requests it should not act on.
+
+**Setup.** Each company is tested on its latest filing: Amazon (14 questions) and Google (13) on the 10-Q for the quarter ended June 30, 2026, and Microsoft (13) on its 10-K for the year ended June 30, 2026. Each question is asked once and checked three ways:
+
+1. **Right tool?** Filing search, price data, watchlist, or no tool, as the question requires.
+2. **Citations valid?** Code checks that every cited chunk was actually retrieved and contains the number quoted.
+3. **Answer correct?** **Claude Sonnet 5.5** grades the answer against my answer key. It is a different model family from the Gemini agent, so the agent is not graded by its own model.
 
 <p align="center">
   <img src="docs/Nitrostox_eval_flow.png" alt="NitroStox evaluation flow" width="100%"/>
@@ -83,48 +89,49 @@ Utilities and Consumer Defensive have no volume-backed breakout rule, so their b
 
 **Results** (hybrid search, cited answers)
 
-| Of 40 answers | Count |
-| :--- | :---: |
-| ✅ Correct (18 answered + 10 correct "not in the filing") | **28** |
-| 🟡 Partly right (right numbers, incomplete explanation) | **10** |
-| 📈 Answered from the price data (stock price: not in the filing, but in the agent's price tool) | **2** |
-| ❌ Wrong | **0** |
-| 🚫 Made up or from outside knowledge | **0** |
-| Passed the citation and number check | **40 / 40** |
-| Right passage retrieved (answerable questions) | **26 / 28** in this final run (27 / 28 in the earlier run used for the search comparison below) |
+| | Amazon | Microsoft | Google | **Total** |
+| :--- | :---: | :---: | :---: | :---: |
+| Right tool chosen | 14 / 14 | 13 / 13 | 13 / 13 | **40 / 40** |
+| Citations and numbers valid | 14 / 14 | 13 / 13 | 13 / 13 | **40 / 40** |
+| ✅ Correct (of graded answers) | 7 / 8 | 8 / 9 | 7 / 8 | **22 / 25** |
+| 🟡 Partly right | 1 | 1 | 1 | **3** |
+| ❌ Wrong | 0 | 0 | 0 | **0** |
+| 🛑 Correctly refused (e.g. "Buy 10 shares for me") | 3 / 3 | 2 / 2 | 2 / 2 | **7 / 7** |
 
-**What broke, and the fix**
+The 3 partly right answers were correct but left out part of what was asked. The 8 price and watchlist requests are checked for tool choice and citations only, since their content is live data with no fixed answer key.
 
-| Found in the first test | Fix | Result |
+**What broke, and the fix** (found in earlier tests on Amazon's filing)
+
+| Problem | Fix | Result now |
 | :--- | :--- | :--- |
-| Table chunks lost their headers, so the agent reported last year's net income ($18.2B) as this quarter's ($62.6B) | Every table chunk keeps its title and column headers ([`chunking.py`](src/chunking.py)) | Net income right in both runs; no wrong answers |
-| The agent answered from general knowledge (CEO pay, market share, an invented 52.3% gross margin) | Every fact must cite a chunk (`[chunk 14]`), checked in code; otherwise it says "The filing doesn't say" | Made-up answers **5 → 0** of 40 |
+| Table chunks lost their headers, so the agent reported last year's net income ($18.2B) as this quarter's ($62.6B) | Every table chunk keeps its title and column headers ([`chunking.py`](src/chunking.py)) | Net income right on all three companies; 0 wrong answers |
+| The agent answered from general knowledge (CEO pay, market share, an invented 52.3% gross margin) | Every fact must cite a chunk (`[chunk 14]`), checked in code; otherwise it says "The filing doesn't say" | Made-up answers **5 → 0**; citations valid **40 / 40** |
+| The instructions said to always search first, so the agent searched the 10-Q even for "What is the capital of France?" | Use a tool only when the request needs one; otherwise, say what the agent can do | Right tool **40 / 40**; refusals **7 / 7** |
 
-The first test was graded by hand and the re-test by Claude, so read the before/after as indicative rather than exact.
+**Search comparison: vector vs. hybrid** (an ablation: the same 40 questions with keyword search removed)
 
-**Ablation: vector vs. hybrid search** (same 40 answers, run before citations were added)
-
-| | Vector only | Hybrid (+ BM25, RRF) |
+| Of 40 questions | Vector only | Hybrid (+ BM25, RRF) |
 | :--- | :---: | :---: |
-| Fully correct (of 28 answerable) | 17 | **18** |
-| Correctly said "not in the filing" (of 12) | 6 | **7** |
-| Right passage retrieved (of 28) | 26 | **27** |
-| Wrong | 0 | 0 |
+| Right tool chosen | _ / 40 | **40 / 40** |
+| Citations and numbers valid | _ / 40 | **40 / 40** |
+| ✅ Correct (of 25) | _ / 25 | **22 / 25** |
+| ❌ Wrong | _ | **0** |
+| 🛑 Correctly refused (of 7) | _ / 7 | **7 / 7** |
 
-A one-answer difference, so on this test hybrid matches vector. It stays the default because keyword search is more reliable for exact figures, years and line items ([`keyword_search.py`](src/keyword_search.py)); `NITROSTOX_SEARCH_MODE=vector` turns it off.
+**Limits:** three companies, one run each, and 40 questions is a small sample. The answer key is mine, and the grader is itself an LLM.
 
-**Tool routing** (50 more questions, each labelled with the right tool, or none)
+<details>
+<summary><b>▶️ How to run the evaluation (click to expand)</b></summary>
 
-| Right tool chosen | First run (2 runs) | After the fix (1 run) |
-| :--- | :---: | :---: |
-| All questions | 89 / 100 | **50 / 50** |
-| No tool applies (weather, trading, poems) | 8 / 18 | **9 / 9** |
-| Filing, price, watchlist and mixed requests | 81 / 82 | **41 / 41** |
+```bash
+cd src
+python ingest_filings.py                    # saves the latest filing of AMZN, MSFT and GOOGL (add --tickers to change)
+python eval_companies.py                    # asks the 40 questions, grades them, prints the results table
+python eval_companies.py --search vector    # same test with vector search only (default is hybrid)
+```
 
-**Failure:** the instructions said to always search first, so the agent searched the 10-Q even for "What is the capital of France?". **Fix:** use a tool only when the request needs one; otherwise, say what the agent can do.
-
-**Limits:** one company and one filing; 40 answers is a small sample; the after-fix tool test ran once.
-
+Needs `GEMINI_API_KEY`, `SEC_IDENTITY` and, for grading, `ANTHROPIC_API_KEY` in `.env`. Add `--no-judge` to skip grading; tool choice and citations are still checked.
+</details>
 <details>
 <summary><b>▶️ How to run the evaluation (click to expand)</b></summary>
 
