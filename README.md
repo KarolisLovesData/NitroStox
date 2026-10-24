@@ -132,17 +132,6 @@ python eval_companies.py --search vector    # same test with vector search only 
 
 Needs `GEMINI_API_KEY`, `SEC_IDENTITY` and, for grading, `ANTHROPIC_API_KEY` in `.env`. Add `--no-judge` to skip grading; tool choice and citations are still checked.
 </details>
-<details>
-<summary><b>▶️ How to run the evaluation (click to expand)</b></summary>
-
-```bash
-cd src
-python preview_chunks.py                                   # saves the latest 10-Q as filing_<TICKER>.md and previews its chunks
-python run_eval.py --filing filing_AMZN.md                 # retrieval test only
-python run_eval.py --filing filing_AMZN.md --agent --runs 2  # also asks the agent every question and grades the answers
-python run_eval.py --filing filing_AMZN.md --agent --runs 2 --search vector  # same test with vector search only (default is hybrid)
-python run_eval.py --filing filing_AMZN.md --agent --skip-retrieval --questions eval_questions_AMZN_tools50.json  # which tool the agent picks
-```
 
 The default search is hybrid. To compare search methods, add `--search vector`, `--search hybrid` or `--search keyword`; `--search all` runs the retrieval test for all three side by side.
 
