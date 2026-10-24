@@ -131,7 +131,6 @@ python eval_companies.py --search vector    # same test with vector search only 
 ```
 
 Needs `GEMINI_API_KEY`, `SEC_IDENTITY` and, for grading, `ANTHROPIC_API_KEY` in `.env`. Add `--no-judge` to skip grading; tool choice and citations are still checked.
-</details>
 
 The default search is hybrid. To compare search methods, add `--search vector`, `--search hybrid` or `--search keyword`; `--search all` runs the retrieval test for all three side by side.
 
