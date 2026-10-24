@@ -44,7 +44,7 @@ Pick a NYSE ticker and get, in one dashboard: rule-based trade signals computed 
 </p>
 
 * **In-warehouse analytics (ELT):** prices are loaded into BigQuery, where chained CTEs and window functions (`LAG`, `AVG`/`MAX`/`SUM OVER`) compute Wilder's RSI, moving averages and Z-scores.
-* **Hybrid search over the filing:** the 10-Q is split into chunks that keep their section and table headers, then searched by meaning (Gemini embeddings) and by exact words (BM25 keyword search), and the two result lists are merged with Reciprocal Rank Fusion. Exact figures, years and line items like "net income" are found as reliably as general questions. Cached per ticker for 24 hours.
+* **Hybrid search over the filing:** the 10-Q is split into chunks that keep their section and table headers, then searched by meaning (Gemini embeddings) and by exact words (BM25 keyword search), and the two result lists are merged with Reciprocal Rank Fusion. Keyword search adds exact matches on figures, years and line items like "net income"; inside the agent, hybrid gave the best final answers (see [Evaluation](#-evaluation)). Cached per ticker for 24 hours.
 * **ReAct agent:** Gemini 3.7 Flash calls three Python tools: filing search, BigQuery indicator lookup, and a BigQuery watchlist manager. It remembers the last six messages.
 * **Cited answers:** the agent tags every fact with its source, like `[chunk 12]`, and says "The filing doesn't say" when the filing has no answer. The app checks every citation and number in code, and the chat shows the cited text under each answer.
 * **Parallel ingestion:** `ThreadPoolExecutor` fetches market data, dividends and insider trades concurrently, then runs the dependent BigQuery reads in parallel.
@@ -115,18 +115,20 @@ The 3 partly right answers were correct but left out part of what was asked. The
 | Right tool chosen | 39 / 40 | **40 / 40** |
 | Citations and numbers valid | 40 / 40 | **40 / 40** |
 | ✅ Correct (of 25) | 20 / 25 | **22 / 25** |
+| 🟡 Partly right | 5 | **3** |
 | ❌ Wrong | 0 | **0** |
 | 🛑 Correctly refused (of 7) | 7 / 7 | **7 / 7** |
 
-Hybrid answered 2 more questions fully correctly than vector alone, and made one fewer wrong tool choice.
+Hybrid answered 2 more questions fully correctly (22 vs. 20 of 25) and made one fewer wrong tool choice. With one run and 25 graded answers, this points toward hybrid rather than proving it.
 
-**Search alone** (the bare question used as the search, 22 filing questions that each have a single source passage, so the 3 broad ones such as "main risks" are left out; how often the right passage is in the top 3 / top 5 results)
+**Search alone** (the bare question used as the search query; 22 filing questions that each have a single source passage, so the 3 broad ones such as "main risks" are left out)
 
-| Vector | Hybrid | Keyword only |
-| :---: | :---: | :---: |
-| **13 / 22 \| 16 / 22** | 8 / 22 \| 14 / 22 | 3 / 22 \| 6 / 22 |
+| Right passage found | Vector | Hybrid | Keyword only |
+| :--- | :---: | :---: | :---: |
+| In the top 3 results | **13 / 22** | 8 / 22 | 3 / 22 |
+| In the top 5 results | **16 / 22** | 14 / 22 | 6 / 22 |
 
-On a bare question, vector search finds the right passage most often. Inside the agent, which rewrites each question into its own search, vector and hybrid both found all 22 passages, and hybrid gave the better final answers.
+On a bare question, vector search finds the right passage most often; merging in the weaker keyword results through RRF pushes some good passages down. Inside the agent, which rewrites each question into its own search, vector and hybrid both found all 22 passages, and hybrid gave the better final answers.
 
 **Limits:** three companies, one run each, and 40 questions is a small sample. The answer key is mine, and the grader is itself an LLM.
 
