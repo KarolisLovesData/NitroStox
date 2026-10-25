@@ -1,4 +1,4 @@
-# 📈 NitroStox: NYSE Financial Intelligence Platform
+# 📈 NitroStox: US Equities Financial Intelligence Platform
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg?logo=python&logoColor=white)
 ![Google Cloud](https://img.shields.io/badge/GCP-Cloud_Infrastructure-4285F4.svg?logo=googlecloud&logoColor=white)
 ![BigQuery](https://img.shields.io/badge/BigQuery-Data_Warehouse-669DF6.svg?logo=googlebigquery&logoColor=white)
