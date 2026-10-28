@@ -1,14 +1,15 @@
-"""Second judge: Grok re-grades answers Claude already graded, and the two grades are compared.
+"""Second judge: another model (default Llama 3.3 70B on Groq) re-grades answers Claude already graded, and the two grades are compared.
 
   python second_judge.py                       # newest hybrid run of each company (the 40-question eval)
   python second_judge.py --mode vector         # newest vector run instead
   python second_judge.py --traces eval_trace_20261024_0914_AMZN_hybrid.jsonl ...   # these runs only
 
-No new agent answers: Gemini is not called. Grok reads the same question, expected answer,
+No new agent answers: Gemini is not called. The second judge reads the same question, expected answer,
 tool output and answer that Claude read (same prompt, judge_answer in eval_grading.py) and
-grades them again. Needs XAI_API_KEY in .env.
+grades them again. Needs GROQ_API_KEY in .env
+(or XAI_API_KEY with --judge-model grok-4.7 for Grok).
 
-Grok's grades are saved next to the trace (second_judge_<trace name>_<model>.jsonl), so a run
+The second judge's grades are saved next to the trace (second_judge_<trace name>_<model>.jsonl), so a run
 that stops early continues where it left off. The original trace files are not changed.
 """
 import argparse
@@ -20,7 +21,7 @@ import time
 
 from dotenv import load_dotenv
 
-from eval_grading import DEFAULT_GROK_MODEL, judge_answer, make_judge_client
+from eval_grading import SECOND_JUDGE_MODEL, judge_answer, make_judge_client
 
 GRADES = ("correct", "partial", "incorrect", "declined", "answered")
 
@@ -48,7 +49,7 @@ def main():
     ap.add_argument("--traces", nargs="+", default=None, help="trace files to re-grade (default: newest per company)")
     ap.add_argument("--mode", default="hybrid", help="search mode of the default traces: hybrid or vector")
     ap.add_argument("--questions", default="eval_questions_companies40.json")
-    ap.add_argument("--judge-model", default=DEFAULT_GROK_MODEL, help="second judge model (grok-*)")
+    ap.add_argument("--judge-model", default=SECOND_JUDGE_MODEL, help="second judge model: llama-* on Groq or grok-* on xAI")
     args = ap.parse_args()
 
     traces = args.traces or newest_traces(args.mode)
@@ -57,6 +58,7 @@ def main():
     with open(args.questions, encoding="utf-8") as f:
         by_id = {q["id"]: q for q in json.load(f)["questions"]}
     client = make_judge_client(args.judge_model)
+    name = "Grok" if args.judge_model.startswith("grok") else "Llama" if args.judge_model.startswith("llama") else "Judge 2"
 
     pairs = []  # (id, first judge grade, second judge grade, first reason, second reason)
     for trace in traces:
@@ -75,21 +77,20 @@ def main():
                     tool_text = "\n\n".join(c["output"] for c in r.get("tool_calls", []))
                     j = judge_answer(client, args.judge_model, q, r["answer"], tool_text)
                     if "judge_error" in j:
-                        print(f"  {r['id']}: Grok error, not saved ({j['judge_error'][:100]})")
+                        print(f"  {r['id']}: {name} error, not saved ({j['judge_error'][:100]})")
                         continue
                     done[key] = {"id": r["id"], "run": r["run"], "judge_model": args.judge_model, "judge": j}
                     out.write(json.dumps(done[key], ensure_ascii=False) + "\n")
                     out.flush()
                     time.sleep(1.0)
                 first, second = r["judge"]["correctness"], done[key]["judge"]["correctness"]
-                print(f"  {r['id']}: Claude {first}, Grok {second}{'' if first == second else '  <- differ'}", flush=True)
+                print(f"  {r['id']}: Claude {first}, {name} {second}{'' if first == second else '  <- differ'}", flush=True)
                 pairs.append((r["id"], first, second, r["judge"].get("reason", ""), done[key]["judge"].get("reason", "")))
 
     if not pairs:
         return
-    first_model = "Claude"
-    print(f"\nCLAUDE vs GROK ({args.judge_model}) on the same {len(pairs)} answers")
-    print(f"  {'grade':12}{first_model:>8}{'Grok':>8}")
+    print(f"\nCLAUDE vs {name.upper()} ({args.judge_model}) on the same {len(pairs)} answers")
+    print(f"  {'grade':12}{'Claude':>8}{name:>8}")
     for g in GRADES:
         a, b = sum(p[1] == g for p in pairs), sum(p[2] == g for p in pairs)
         if a or b:
@@ -100,7 +101,7 @@ def main():
     if differ:
         print("\nWHERE THEY DIFFER")
         for qid, a, b, ra, rb in differ:
-            print(f"  {qid}: Claude {a}, Grok {b}\n    Claude: {ra}\n    Grok:   {rb}")
+            print(f"  {qid}: Claude {a}, {name} {b}\n    Claude: {ra}\n    {name}: {rb}")
 
 
 if __name__ == "__main__":

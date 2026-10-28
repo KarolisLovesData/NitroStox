@@ -12,7 +12,7 @@ Three checks per agent answer:
      retrieved, every sentence with a number has a citation, and its numbers are in the cited chunk.
      The judge is a Claude model by default (ANTHROPIC_API_KEY), so the model that grades is
      not the Gemini model that wrote the answer. A Gemini judge is still possible by passing a
-     gemini-* model name, and a Grok judge (XAI_API_KEY) by passing a grok-* name.
+     gemini-* model name, a Llama judge on Groq (GROQ_API_KEY) with llama-*, and Grok (XAI_API_KEY) with grok-*.
 """
 import json
 import re
@@ -23,21 +23,30 @@ from google.genai import types
 from grounding import check_citations, extract_numbers, unsupported_numbers  # noqa: F401 (extract_numbers re-exported)
 
 DEFAULT_JUDGE_MODEL = "claude-sonnet-5-5"
-DEFAULT_GROK_MODEL = "grok-4.7"  # second judge (second_judge.py), a third model family
-XAI_URL = "https://api.x.ai/v1/chat/completions"
+SECOND_JUDGE_MODEL = "llama-3.3-70b-versatile"  # second judge (second_judge.py), a third model family, on Groq
+# Judges reached through an OpenAI-style chat API: model name prefix -> (provider, URL, key in .env)
+OPENAI_STYLE = {
+    "llama": ("Groq", "https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY"),
+    "grok": ("xAI", "https://api.x.ai/v1/chat/completions", "XAI_API_KEY"),
+}
+
+
+def _openai_style(model: str):
+    return next((v for k, v in OPENAI_STYLE.items() if model.startswith(k)), None)
 
 
 def make_judge_client(model: str):
-    """Client for the judge model: Anthropic for claude-* names, xAI for grok-*, Gemini otherwise."""
-    if model.startswith("grok"):
+    """Client for the judge model: Anthropic for claude-*, Groq for llama-*, xAI for grok-*, Gemini otherwise."""
+    if _openai_style(model):
         import os
         import requests
-        key = os.getenv("XAI_API_KEY")
+        provider, url, key_name = _openai_style(model)
+        key = os.getenv(key_name)
         if not key:
-            raise SystemExit("The judge model is Grok but XAI_API_KEY is not set. Add it to .env "
-                             "(create a key at console.x.ai).")
-        session = requests.Session()  # xAI speaks the OpenAI chat format, so plain requests is enough
+            raise SystemExit(f"The judge model {model} runs on {provider} but {key_name} is not set. Add it to .env.")
+        session = requests.Session()  # plain requests is enough for the OpenAI chat format
         session.headers.update({"Authorization": f"Bearer {key}"})
+        session.judge_url = url
         return session
     if model.startswith("claude"):
         import os
@@ -74,12 +83,18 @@ def _ask_judge(client, model: str, prompt: str) -> dict:
         if resp.stop_reason == "refusal":
             raise RuntimeError(f"judge declined to answer ({getattr(resp.stop_details, 'category', None)})")
         return _parse_json("".join(b.text for b in resp.content if b.type == "text"))
-    if model.startswith("grok"):
-        resp = client.post(XAI_URL, timeout=180, json={
+    if _openai_style(model):
+        body = {
             "model": model, "temperature": 0,
             "response_format": {"type": "json_object"},
             "messages": [{"role": "user", "content": prompt + "\nReply with the JSON object only."}],
-        })
+        }
+        for _ in range(5):
+            resp = client.post(client.judge_url, timeout=180, json=body)
+            if resp.status_code != 429:
+                break
+            # Per-minute token limit (Groq's free tier is low): wait as long as the API asks, then retry
+            time.sleep(min(float(resp.headers.get("retry-after") or 20), 90))
         resp.raise_for_status()
         return _parse_json(resp.json()["choices"][0]["message"]["content"])
     config = types.GenerateContentConfig(temperature=0, response_mime_type="application/json")
