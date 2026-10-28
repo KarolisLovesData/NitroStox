@@ -23,7 +23,7 @@ from google.genai import types
 from grounding import check_citations, extract_numbers, unsupported_numbers  # noqa: F401 (extract_numbers re-exported)
 
 DEFAULT_JUDGE_MODEL = "claude-sonnet-5-5"
-SECOND_JUDGE_MODEL = "llama-3.3-70b-versatile"  # second judge (second_judge.py), a third model family, on Groq
+SECOND_JUDGE_MODEL = "grok-4.7"  # second judge (second_judge.py), a third model family, on xAI
 # Judges reached through an OpenAI-style chat API: model name prefix -> (provider, URL, key in .env)
 OPENAI_STYLE = {
     "llama": ("Groq", "https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY"),

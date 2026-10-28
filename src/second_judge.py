@@ -1,4 +1,4 @@
-"""Second judge: another model (default Llama 3.3 70B on Groq) re-grades answers Claude already graded, and the two grades are compared.
+"""Second judge: Grok (or another model) re-grades answers Claude already graded, and the two grades are compared.
 
   python second_judge.py                       # newest hybrid run of each company (the 40-question eval)
   python second_judge.py --mode vector         # newest vector run instead
@@ -6,8 +6,8 @@
 
 No new agent answers: Gemini is not called. The second judge reads the same question, expected answer,
 tool output and answer that Claude read (same prompt, judge_answer in eval_grading.py) and
-grades them again. Needs GROQ_API_KEY in .env
-(or XAI_API_KEY with --judge-model grok-4.7 for Grok).
+grades them again. Needs XAI_API_KEY in .env (or GROQ_API_KEY with
+--judge-model llama-3.3-70b-versatile for Llama on Groq).
 
 The second judge's grades are saved next to the trace (second_judge_<trace name>_<model>.jsonl), so a run
 that stops early continues where it left off. The original trace files are not changed.
