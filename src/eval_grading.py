@@ -12,7 +12,7 @@ Three checks per agent answer:
      retrieved, every sentence with a number has a citation, and its numbers are in the cited chunk.
      The judge is a Claude model by default (ANTHROPIC_API_KEY), so the model that grades is
      not the Gemini model that wrote the answer. A Gemini judge is still possible by passing a
-     gemini-* model name.
+     gemini-* model name, and a Grok judge (XAI_API_KEY) by passing a grok-* name.
 """
 import json
 import re
@@ -23,10 +23,22 @@ from google.genai import types
 from grounding import check_citations, extract_numbers, unsupported_numbers  # noqa: F401 (extract_numbers re-exported)
 
 DEFAULT_JUDGE_MODEL = "claude-sonnet-5-5"
+DEFAULT_GROK_MODEL = "grok-4.7"  # second judge (second_judge.py), a third model family
+XAI_URL = "https://api.x.ai/v1/chat/completions"
 
 
 def make_judge_client(model: str):
-    """Client for the judge model: Anthropic for claude-* names, Gemini otherwise."""
+    """Client for the judge model: Anthropic for claude-* names, xAI for grok-*, Gemini otherwise."""
+    if model.startswith("grok"):
+        import os
+        import requests
+        key = os.getenv("XAI_API_KEY")
+        if not key:
+            raise SystemExit("The judge model is Grok but XAI_API_KEY is not set. Add it to .env "
+                             "(create a key at console.x.ai).")
+        session = requests.Session()  # xAI speaks the OpenAI chat format, so plain requests is enough
+        session.headers.update({"Authorization": f"Bearer {key}"})
+        return session
     if model.startswith("claude"):
         import os
         if not os.getenv("ANTHROPIC_API_KEY"):
@@ -62,6 +74,14 @@ def _ask_judge(client, model: str, prompt: str) -> dict:
         if resp.stop_reason == "refusal":
             raise RuntimeError(f"judge declined to answer ({getattr(resp.stop_details, 'category', None)})")
         return _parse_json("".join(b.text for b in resp.content if b.type == "text"))
+    if model.startswith("grok"):
+        resp = client.post(XAI_URL, timeout=180, json={
+            "model": model, "temperature": 0,
+            "response_format": {"type": "json_object"},
+            "messages": [{"role": "user", "content": prompt + "\nReply with the JSON object only."}],
+        })
+        resp.raise_for_status()
+        return _parse_json(resp.json()["choices"][0]["message"]["content"])
     config = types.GenerateContentConfig(temperature=0, response_mime_type="application/json")
     resp = client.models.generate_content(model=model, contents=[prompt], config=config)
     return json.loads(resp.text)

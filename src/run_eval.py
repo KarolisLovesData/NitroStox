@@ -359,7 +359,7 @@ def main():
                     help="weight of the keyword (BM25) list in hybrid search; default 1.0 = same as vector. "
                          "0.5 lets the vector list count double. Try it with --search hybrid or --retrieval.")
     ap.add_argument("--judge-model", default=DEFAULT_JUDGE_MODEL,
-                    help="model for the LLM judge. claude-* uses ANTHROPIC_API_KEY; gemini-* uses GEMINI_API_KEY. "
+                    help="model for the LLM judge. claude-* uses ANTHROPIC_API_KEY; gemini-* uses GEMINI_API_KEY; grok-* uses XAI_API_KEY. "
                          "Default is a Claude model so the judge is not the same model family as the agent.")
     args = ap.parse_args()
     if args.keyword_weight is not None:
